@@ -37,10 +37,10 @@ const ytext = ydoc.getText('code');
 // Function to save only the actual update
 function saveYjsState() {
     // Encode the Yjs document's state as an update
-    const update = encodeStateAsUpdate(ydoc); 
+    const update = encodeStateAsUpdate(ydoc);
 
     // Save the update (could be to a file or a database)
-    fs.writeFileSync('doc-state.bin', update); 
+    fs.writeFileSync('doc-state.bin', update);
 
     // Optionally log the change to the console
     console.log('Yjs update saved to file.');
@@ -50,17 +50,10 @@ function saveYjsState() {
 ytext.observe((event:any) => {
     console.log('Document change detected:');
 
-    // Event provides details on the changes (insertions, deletions, etc.)
-    event.changes.forEach((change:any) => {
-        if (change.insert) {
-            console.log('Inserted:', change.insert);
-        }
-        if (change.delete) {
-            console.log('Deleted:', change.delete);
-        }
+    event.changes.keys.forEach((change:any, key:any) => {
+        console.log(`Key: ${key}, Change: ${JSON.stringify(change)}`);
     });
 
-    // Save the Yjs update after every change
     saveYjsState();
 });
 
@@ -73,35 +66,34 @@ function loadYjsState() {
     }
 }
 
-loadYjsState();  // Load any saved state when the server starts
+// loadYjsState();  // Load any saved state when the server starts
 
-// Handle socket connections
 io.on('connection', (socket:any) => {
-    console.log(`socket connected: ${socket.id}`);
+    console.log(`Socket connected: ${socket.id}`);
 
     // On new connection, send the current Yjs state to the client
-    const update = encodeStateAsUpdate(ydoc); // Get the Yjs state as an update
-    console.log('Sending initial state:', update); 
-    socket.emit('connection', socket.id, Array.from(update));
+    const update = encodeStateAsUpdate(ydoc);
+    console.log('Sending initial state (length):', update.length);
+    socket.emit('initialState', socket.id, update);
 
-    // socket.on('update', (code:any) => {
-    //     // Apply the received update to the Yjs document (you would serialize and send the updates)
-    //     const ytext = ydoc.getText('code');
-    //     ytext.delete(0, ytext.length);  // Clear existing content
-    //     ytext.insert(0, code);  // Insert the new code
+    socket.on('update', (clientUpdate:any) => {
+        try {
+            const updateArray = new Uint8Array(clientUpdate); // Convert received data back to Uint8Array
+            applyUpdate(ydoc, updateArray); // Apply update to the backend Yjs document
+            console.log(`Applied update from ${socket.id}`);
 
-    //     // Save Yjs state periodically or on every update
-    //     // saveYjsState();  // Save the state to a file (or database)
-        
-    //     // Broadcast the update to other clients
-    //     io.emit('update', code, socket.id);
-    // });
+            // Broadcast the update to all other connected clients
+            socket.broadcast.emit('update', clientUpdate);
+        } catch (error) {
+            console.error('Error applying update:', error);
+        }
+    });
 });
 
-// Periodically save the Yjs state to ensure changes are persisted
-setInterval(() => {
-    saveYjsState();
-}, 25000);  // Save every few minutes
 
-// Start the server
+// Periodically save the Yjs state to ensure changes are persisted
+// setInterval(() => {
+//     saveYjsState();
+// }, 2000);  // Save every few minutes
+
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

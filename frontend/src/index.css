@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom caret style */
+.monaco-editor .cursor {
+    width: 3px;
+    border-radius: 2px;
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
