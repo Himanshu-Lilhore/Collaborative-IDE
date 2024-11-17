@@ -2,15 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom caret style */
 .monaco-editor .cursor {
     width: 3px;
     border-radius: 2px;
-    animation: blink 1s ease-in-out infinite;
+    animation: blink 1s step-start infinite;
 }
 
 @keyframes blink {
     50% {
-        opacity: 0;
+        opacity: 50;
     }
 }

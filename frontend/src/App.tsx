@@ -32,9 +32,9 @@ export default function App() {
             rules: [],
             colors: {
                 // Highlighted text background color
-                'editor.selectionBackground': '#999999',
+                'editor.selectionBackground': '#96ff30ad',
                 // Caret (cursor) color
-                'editorCursor.foreground': '#cccccc',
+                'editorCursor.foreground': '#BFFF00',
             },
         });
 
