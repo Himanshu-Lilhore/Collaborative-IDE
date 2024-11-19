@@ -1,13 +1,9 @@
 import { Editor } from "@monaco-editor/react";
 import { useState } from 'react';
 
-export default function CodeEditor({code, setCode, setTrigger} : {code:string, setCode:any, setTrigger:any}) {
-	const [language, setLanguage] = useState('html');
+export default function CodeEditor({ handleEditorDidMount }: { handleEditorDidMount: any }) {
+	const [language] = useState('html');
 
-	function handleChange(val?: string) {
-		setCode(val);
-		setTrigger(new Date());
-	}
 
 	return (
 		<Editor
@@ -18,9 +14,8 @@ export default function CodeEditor({code, setCode, setTrigger} : {code:string, s
 			}}
 			height="75vh"
 			theme="vs-dark"
-			value={code}
 			language={language}
-			onChange={(val) => handleChange(val)}
+			onMount={handleEditorDidMount}
 		/>
 	)
 }

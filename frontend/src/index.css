@@ -13,3 +13,13 @@
         opacity: 50;
     }
 }
+
+.remote-cursor-decoration {
+    border-left: 2px solid red; /* Customize cursor appearance */
+    background-color: rgba(255, 0, 0, 0.1); /* Light red background */
+}
+
+.remote-selection-highlight {
+    background-color: rgba(0, 255, 0, 0.2); /* Light green for selection */
+    border: 1px dashed green; /* Highlight border */
+}

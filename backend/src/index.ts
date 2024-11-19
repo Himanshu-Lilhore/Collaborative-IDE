@@ -67,6 +67,7 @@ function loadYjsState() {
 }
 
 // loadYjsState();  // Load any saved state when the server starts
+let clients = new Map();
 
 io.on('connection', (socket:any) => {
     console.log(`Socket connected: ${socket.id}`);
@@ -83,10 +84,21 @@ io.on('connection', (socket:any) => {
             console.log(`Applied update from ${socket.id}`);
 
             // Broadcast the update to all other connected clients
-            socket.broadcast.emit('update', clientUpdate);
+            // socket.broadcast.emit('update', clientUpdate);
         } catch (error) {
             console.error('Error applying update:', error);
         }
+    });
+
+
+    clients.set(socket.id, {});
+
+    // When a client sends awareness update data, broadcast to others
+    socket.on('awarenessUpdate', (data:any) => {
+        console.log('Received awareness update:', data);
+
+        // Relay this awareness data to all connected clients (except the sender)
+        socket.broadcast.emit('awarenessUpdate', data);
     });
 });
 
