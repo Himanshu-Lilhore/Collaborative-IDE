@@ -100,6 +100,11 @@ io.on('connection', (socket:any) => {
         // Relay this awareness data to all connected clients (except the sender)
         socket.broadcast.emit('awarenessUpdate', data);
     });
+
+    socket.on('disconnect', () => {
+        console.log('disconnection received');
+        io.emit('disconnected');
+    })
 });
 
 

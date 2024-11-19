@@ -1,12 +1,10 @@
 import { Editor } from "@monaco-editor/react";
-import { useState } from 'react';
 
-export default function CodeEditor({ handleEditorDidMount }: { handleEditorDidMount: any }) {
-	const [language] = useState('html');
-
+export default function CodeEditor({ handleEditorDidMount, trigger, language }: { handleEditorDidMount: any, trigger: any, language:any }) {
 
 	return (
 		<Editor
+			key={trigger}
 			options={{
 				minimap: {
 					enabled: false,

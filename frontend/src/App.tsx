@@ -25,9 +25,10 @@ export default function App() {
         )
     ).current;
     const handleEditorDidMount = useRef<any>();
-    const [currentDecorations, setCurrentDecorations] = useState<string[]>([])
-    const [alreadyUpdated, setAlreadyUpdated] = useState<string[]>([])
-    const decorationTimer = useRef<any>(setTimeout(() => { }, 100));
+    const decorations = useRef<any>(null);
+    const [trigger, setTrigger] = useState<any>(Date())
+    const [language, setLanguage] = useState('html');
+
 
     useEffect(() => {
         console.log(`user id set to : ${user}`);
@@ -40,9 +41,7 @@ export default function App() {
                 inherit: true,
                 rules: [],
                 colors: {
-                    // Highlighted text background color
-                    'editor.selectionBackground': '#96ff30ad',
-                    // Caret (cursor) color
+                    'editor.selectionBackground': '#00fff020',
                     'editorCursor.foreground': '#BFFF00',
                 },
             });
@@ -60,60 +59,66 @@ export default function App() {
                 const newState = { startLine, startColumn, endLine, endColumn };
 
                 // Avoid triggering updates if the cursor hasn't changed
-                if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
+                if ((JSON.stringify(currentState) !== JSON.stringify(newState))
+                    // || (newState.startLine===newState.endLine && newState.startColumn===newState.endColumn)
+                ) {
                     // Update awareness with cursor/selection data
-                    const newCursor = { user: user, range: newState, updatedAt: (new Date()).getTime() }
+                    let newCursor: any = { user: user, range: newState };
+
+                    const currentAwareness = provider.awareness.getLocalState();
+                    // console.log('currentAwareness', currentAwareness); /////////////
+                    if (currentAwareness && currentAwareness.cursor) {
+                        newCursor = null; // Clear old cursor state
+                    }
+
                     provider.awareness.setLocalStateField('cursor', newCursor);
-                    console.log(newCursor);
+                    console.log(newCursor); ////////////////
                 }
             });
 
-
             // Listen to awareness changes and update decorations
-            provider.awareness.on('change', () => {
+            provider.awareness.on('change', (_added: any, _updated: any, _removed: any) => {
                 const states = Array.from(provider.awareness.getStates().entries());
 
                 const remoteCursors = states
                     .filter(([clientId]) => clientId !== provider.awareness.clientID)
                     .map(([, state]) => state.cursor)
-                    .filter(thisCursor => !alreadyUpdated.includes(thisCursor.updatedAt));
+                    .filter(Boolean)
 
                 console.log("remote cursors: ", remoteCursors)///////////////////
+
                 // Map remote cursors to Monaco decorations
                 const newDecorations = remoteCursors.map((cursor) => ({
                     range: new monaco.Range(
-                        cursor.range.startLine,
-                        cursor.range.startColumn,
-                        cursor.range.endLine,
-                        cursor.range.endColumn
+                        cursor?.range.startLine,
+                        cursor?.range.startColumn,
+                        cursor?.range.endLine,
+                        cursor?.range.endColumn
                     ),
                     options: {
                         className: 'remote-cursor-decoration',
                         isWholeLine: false,
                     },
                 }));
+                console.log("newDec", newDecorations)
 
-                setAlreadyUpdated((prev: any) => {
-                    return [...prev, ...remoteCursors.map(thisCursor => thisCursor.updatedAt)]
-                })
-
-                // Avoid redundant updates
-                let decorationIds: string[] = [];
-
-                decorationIds = editor.createDecorationsCollection(newDecorations);
-                setCurrentDecorations(decorationIds);
-                // if (decorationIds.toString() !== currentDecorations.toString()) {
-                //     // decorationIds = editor.deltaDecorations(currentDecorations, newDecorations);
-                // }
+                // Apply updates
+                if (decorations.current) decorations.current.clear();
+                decorations.current = editor.createDecorationsCollection(newDecorations);
             });
 
 
             editorRef.current = editor;
             const ytext = ydoc.getText('code');
             new MonacoBinding(ytext, editorRef.current.getModel(), new Set([editorRef.current]), provider.awareness);
+
+            socket.on('disconnected', () => {
+                setTrigger(new Date().getTime())
+                console.log('disconnection received');
+                if (decorations.current) decorations.current.clear();
+            });
         }
     }, [user])
-
 
 
     const initialStateHandler = (id: string, initialState: Uint8Array) => {
@@ -125,15 +130,6 @@ export default function App() {
 
 
     useEffect(() => {
-        console.log("currentDecorations : ", currentDecorations);
-    }, [currentDecorations])
-
-    useEffect(() => {
-        console.log("AlreadyUpdated : ", alreadyUpdated);
-    }, [alreadyUpdated])
-
-
-    useEffect(() => {
         socket.on('initialState', initialStateHandler);
 
         ydoc.on('update', (_upt, origin) => {
@@ -142,12 +138,6 @@ export default function App() {
                 socket.emit('update', update);
             }
         });
-
-        // On receiving an update.
-        // provider.awareness.on('change', () => {
-        //     const update = Y.encodeStateAsUpdate(ydoc); // Generate update
-        //     socket.emit('update', update); // Send update to the backend
-        // });
 
 
         // debugger
@@ -168,25 +158,6 @@ export default function App() {
         // });
 
 
-        // sending cursor update to server
-        // provider.awareness.on('change', () => {
-        //     const states = Array.from(provider.awareness.getStates());
-        //     socket.emit('awarenessUpdate', { states });
-        // });
-
-        // Handle awareness updates from the server
-        // socket.on('awarenessUpdate', (data: { states: Record<string, any> }) => {
-        //     Object.entries(data.states).forEach(([clientID, state]) => {
-        //         const numericClientID = Number(clientID); // Convert clientID to a number
-        //         const localState = provider.awareness.getStates().get(numericClientID);
-
-        //         if (localState !== state) {
-        //             provider.awareness.setLocalStateField('remote', state); // Update local state field
-        //         }
-        //     });
-        // });
-
-
         return () => {
             socket.off('initialState', initialStateHandler);
         };
@@ -195,8 +166,13 @@ export default function App() {
 
     return (
         <div className=''>
-            <InfoPanel user={user} />
-            <CodeEditor handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)} />
+            <InfoPanel user={user} language={language} setLanguage={setLanguage}/>
+
+            <CodeEditor 
+            trigger={trigger} 
+            handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)} 
+            language={language}
+            />
         </div>
     )
 }
