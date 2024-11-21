@@ -7,6 +7,7 @@ import * as Y from 'yjs';
 import { SocketIOProvider } from 'y-socket.io';
 import { MonacoBinding } from 'y-monaco';
 import CodeEditor from './components/CodeEditor';
+import Terminal from './components/Terminal';
 
 
 Axios.defaults.withCredentials = true;
@@ -173,6 +174,8 @@ export default function App() {
             handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)} 
             language={language}
             />
+
+            <Terminal />
         </div>
     )
 }
