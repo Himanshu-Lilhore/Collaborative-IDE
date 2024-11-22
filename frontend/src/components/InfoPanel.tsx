@@ -1,4 +1,4 @@
-const langs = ['html', 'python', 'javascript'];
+const langs = ['html', 'python', 'javascript', 'typescript'];
 
 export default function InfoPanel({ user, language, setLanguage }: { user: string, language: any, setLanguage: any }) {
     return (
