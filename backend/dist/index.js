@@ -1,3 +1,4 @@
+"use strict";
 require('dotenv').config();
 const express = require('express');
 const app = express();
@@ -9,33 +10,27 @@ const fs = require('fs');
 var os = require('os');
 const { encodeStateAsUpdate, applyUpdate } = require('yjs');
 const PORT = process.env.PORT || 3000;
-const pty = require('node-pty')
-
+const pty = require('node-pty');
 var shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
-
-const ptyProcess = pty.spawn( shell, [], {
+const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-color',
     cols: 80,
     rows: 30,
     cwd: process.env.INIT_CWD + '/user',
     env: process.env
 });
-
-ptyProcess.onData((data:any) => {
-    console.log("Data : ", data)
-    io.emit('terminal', data)
-})
-
+ptyProcess.onData((data) => {
+    console.log("Data : ", data);
+    io.emit('terminal', data);
+});
 app.use(express.json());
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT'],
     credentials: true
 }));
-
 // Create an HTTP server
 const server = http.createServer(app);
-
 // Attach socket.io to the same server instance
 const io = socketIo(server, {
     connectionStateRecovery: {},
@@ -45,93 +40,72 @@ const io = socketIo(server, {
         credentials: true
     }
 });
-
 // Create the Yjs document
 const ydoc = new Y.Doc();
 const ytext = ydoc.getText('code');
-
 // Function to save only the actual update
 function saveYjsState() {
     // Encode the Yjs document's state as an update
     const update = encodeStateAsUpdate(ydoc);
-
     // Save the update (could be to a file or a database)
     fs.writeFileSync('doc-state.bin', update);
-
     // Optionally log the change to the console
     console.log('Yjs update saved to file.');
 }
-
 // Set up an observer to track changes in the Yjs document
-ytext.observe((event:any) => {
+ytext.observe((event) => {
     console.log('Document change detected:');
-
-    event.changes.keys.forEach((change:any, key:any) => {
+    event.changes.keys.forEach((change, key) => {
         console.log(`Key: ${key}, Change: ${JSON.stringify(change)}`);
     });
-
     saveYjsState();
 });
-
 // Load Yjs state from file (optional: to persist between server restarts)
 function loadYjsState() {
     if (fs.existsSync('doc-state.bin')) {
         const savedState = fs.readFileSync('doc-state.bin');
-        applyUpdate(ydoc, savedState);  // Apply the saved state to the Yjs document
+        applyUpdate(ydoc, savedState); // Apply the saved state to the Yjs document
         console.log('Yjs state loaded from file');
     }
 }
-
 // loadYjsState();  // Load any saved state when the server starts
 let clients = new Map();
-
-io.on('connection', (socket:any) => {
+io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
-    ptyProcess.write('\r');
-
     // On new connection, send the current Yjs state to the client
     const update = encodeStateAsUpdate(ydoc);
     console.log('Sending initial state (length):', update.length);
     socket.emit('initialState', socket.id, update);
-
-    socket.on('update', (clientUpdate:any) => {
+    socket.on('update', (clientUpdate) => {
         try {
             const updateArray = new Uint8Array(clientUpdate); // Convert received data back to Uint8Array
             applyUpdate(ydoc, updateArray); // Apply update to the backend Yjs document
             console.log(`Applied update from ${socket.id}`);
-
             // Broadcast the update to all other connected clients
             // socket.broadcast.emit('update', clientUpdate);
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error applying update:', error);
         }
     });
-
-    socket.on('terminal', (data:any) => {
-        console.log('Term', data)
+    socket.on('terminal', (data) => {
+        console.log('Term', data);
         ptyProcess.write(data);
-    })
-
+    });
     clients.set(socket.id, {});
-
     // When a client sends awareness update data, broadcast to others
-    socket.on('awarenessUpdate', (data:any) => {
+    socket.on('awarenessUpdate', (data) => {
         console.log('Received awareness update:', data);
-
         // Relay this awareness data to all connected clients (except the sender)
         socket.broadcast.emit('awarenessUpdate', data);
     });
-
     socket.on('disconnect', () => {
         console.log('disconnection received');
         io.emit('disconnected');
-    })
+    });
 });
-
-
 // Periodically save the Yjs state to ensure changes are persisted
 // setInterval(() => {
 //     saveYjsState();
 // }, 2000);  // Save every few minutes
-
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
