@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 const pty = require('node-pty')
 const connectDB = require('../config/mongodb')
 const chokidar = require('chokidar');
+const {v4:uuidv4} = require('uuid');
 
 connectDB();
 
@@ -155,28 +156,32 @@ chokidar.watch('./user').on('all', (event:any, path:any) => {
 });
 
 
-async function generateFileTree(directory:any) {
-    const tree:any = {}
+async function buildTree(currentDir:any, currentTree:any) {
+    const items = await fs.readdir(currentDir)
 
-    async function buildTree(currentDir:any, currentTree:any) {
-        const items = await fs.readdir(currentDir)
+    for (const item of items) {
+        let tempObj:any = {name:item, id:uuidv4()};
+        const itemPath = path.join(currentDir, item)
+        const stat = await fs.stat(itemPath)
 
-        for (const item of items) {
-            const itemPath = path.join(currentDir, item)
-            const stat = await fs.stat(itemPath)
-
-            if (stat.isDirectory()) {
-                currentTree[item] = {}
-                await buildTree(itemPath, currentTree[item])
-            } else {
-                currentTree[item] = null
-            }
+        if (stat.isDirectory()) {
+            tempObj.children = []
+            await buildTree(itemPath, tempObj.children)
+        } else {
+            tempObj.children = null
         }
+        currentTree.push(tempObj);
     }
+}
 
-    await buildTree(directory, tree);
+
+async function generateFileTree(directory:any) {
+    const tree:any = {name:'root', id:'root', children:[]}
+
+    await buildTree(directory, tree.children);
     return tree
 }
+
 
 // Periodically save the Yjs state to ensure changes are persisted
 // setInterval(() => {
