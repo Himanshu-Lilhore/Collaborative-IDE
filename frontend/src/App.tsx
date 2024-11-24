@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css'
-import InfoPanel from './components/InfoPanel'
-import { io } from "socket.io-client";
 import Axios from 'axios';
 import * as Y from 'yjs';
 import { SocketIOProvider } from 'y-socket.io';
 import { MonacoBinding } from 'y-monaco';
 import CodeEditor from './components/CodeEditor';
 import Terminal from './components/Terminal';
-
+import InfoPanel from './components/InfoPanel'
+import Explorer from './components/Explorer';
+import socket from './util/socket';
 
 Axios.defaults.withCredentials = true;
-const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 export default function App() {
     const [user, setUser] = useState<string>('DEFAULT')
@@ -167,15 +166,23 @@ export default function App() {
 
     return (
         <div className=''>
-            <InfoPanel user={user} language={language} setLanguage={setLanguage}/>
+            <InfoPanel user={user} language={language} setLanguage={setLanguage} />
 
-            <CodeEditor 
-            trigger={trigger} 
-            handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)} 
-            language={language}
-            />
-
-            <Terminal />
+            <div className='flex flex-row'>
+                <Explorer />
+                <div className='flex flex-col h-full w-full'>
+                    <div className='h-3/5'>
+                        <CodeEditor
+                            trigger={trigger}
+                            handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}
+                            language={language}
+                        />
+                    </div>
+                    <div >
+                        <Terminal />
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

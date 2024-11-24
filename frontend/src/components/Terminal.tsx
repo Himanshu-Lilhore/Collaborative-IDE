@@ -15,7 +15,6 @@ export default function Terminal() {
         term.onData((data: any) => {
             socket.emit('terminal', data);
         });
-        term.write('\r');
         socket.on('terminal', (data) => {
             term.write(data);
         });

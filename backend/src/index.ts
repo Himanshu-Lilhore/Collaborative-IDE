@@ -5,24 +5,29 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const Y = require('yjs');
-const fs = require('fs');
+const fs = require('fs/promises');
+const path = require('path')
 var os = require('os');
 const { encodeStateAsUpdate, applyUpdate } = require('yjs');
 const PORT = process.env.PORT || 3000;
 const pty = require('node-pty')
+const connectDB = require('../config/mongodb')
+const chokidar = require('chokidar');
+
+connectDB();
 
 var shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
-const ptyProcess = pty.spawn( shell, [], {
+const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-color',
     cols: 80,
-    rows: 30,
+    rows: 10,
     cwd: process.env.INIT_CWD + '/user',
     env: process.env
 });
 
-ptyProcess.onData((data:any) => {
-    console.log("Data : ", data)
+ptyProcess.onData((data: any) => {
+    // console.log("Data : ", data)
     io.emit('terminal', data)
 })
 
@@ -63,10 +68,10 @@ function saveYjsState() {
 }
 
 // Set up an observer to track changes in the Yjs document
-ytext.observe((event:any) => {
+ytext.observe((event: any) => {
     console.log('Document change detected:');
 
-    event.changes.keys.forEach((change:any, key:any) => {
+    event.changes.keys.forEach((change: any, key: any) => {
         console.log(`Key: ${key}, Change: ${JSON.stringify(change)}`);
     });
 
@@ -85,16 +90,18 @@ function loadYjsState() {
 // loadYjsState();  // Load any saved state when the server starts
 let clients = new Map();
 
-io.on('connection', (socket:any) => {
+io.on('connection', async (socket: any) => {
     console.log(`Socket connected: ${socket.id}`);
-    ptyProcess.write('\r');
+    ptyProcess.write('cls\r');
+    let fileTree = await generateFileTree('./user');
+    socket.emit('files', fileTree )
 
     // On new connection, send the current Yjs state to the client
     const update = encodeStateAsUpdate(ydoc);
     console.log('Sending initial state (length):', update.length);
     socket.emit('initialState', socket.id, update);
 
-    socket.on('update', (clientUpdate:any) => {
+    socket.on('update', (clientUpdate: any) => {
         try {
             const updateArray = new Uint8Array(clientUpdate); // Convert received data back to Uint8Array
             applyUpdate(ydoc, updateArray); // Apply update to the backend Yjs document
@@ -107,15 +114,15 @@ io.on('connection', (socket:any) => {
         }
     });
 
-    socket.on('terminal', (data:any) => {
-        console.log('Term', data)
+    socket.on('terminal', (data: any) => {
+        // console.log('Term', data)
         ptyProcess.write(data);
     })
 
     clients.set(socket.id, {});
 
     // When a client sends awareness update data, broadcast to others
-    socket.on('awarenessUpdate', (data:any) => {
+    socket.on('awarenessUpdate', (data: any) => {
         console.log('Received awareness update:', data);
 
         // Relay this awareness data to all connected clients (except the sender)
@@ -126,8 +133,50 @@ io.on('connection', (socket:any) => {
         console.log('disconnection received');
         io.emit('disconnected');
     })
+
+    socket.on('files', async () => {
+        fileTree = await generateFileTree('./user');
+        console.log("Emitting file tree ...")
+        io.emit('files', fileTree )
+    })
 });
 
+
+// app.get('/files', async (req:any, res:any) => {
+//     const fileTree = await generateFileTree('../user');
+//     return res.json({ tree: fileTree })
+// })
+
+
+
+
+chokidar.watch('./user').on('all', (event:any, path:any) => {
+    io.emit('file:refresh', path)
+});
+
+
+async function generateFileTree(directory:any) {
+    const tree:any = {}
+
+    async function buildTree(currentDir:any, currentTree:any) {
+        const items = await fs.readdir(currentDir)
+
+        for (const item of items) {
+            const itemPath = path.join(currentDir, item)
+            const stat = await fs.stat(itemPath)
+
+            if (stat.isDirectory()) {
+                currentTree[item] = {}
+                await buildTree(itemPath, currentTree[item])
+            } else {
+                currentTree[item] = null
+            }
+        }
+    }
+
+    await buildTree(directory, tree);
+    return tree
+}
 
 // Periodically save the Yjs state to ensure changes are persisted
 // setInterval(() => {
