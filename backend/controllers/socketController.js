@@ -2,13 +2,16 @@ const Y = require('yjs');
 const { encodeStateAsUpdate, applyUpdate } = require('yjs');
 const { saveYjsState, loadYjsState } = require('../services/yjsService');
 const { ptyProcess } = require('../server/terminal');
-const fileTreeService = require('../services/fileService');
 const globalState = require('../utils/state');
 
 
 const setupSocket = (io) => {
     const ydoc = new Y.Doc();
     loadYjsState(ydoc);
+
+    ptyProcess.onData((data) => {
+        io.emit('terminal', data)
+    })
 
     io.on('connection', async (socket) => {
         console.log(`Socket connected: ${socket.id}`);

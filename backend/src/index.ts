@@ -9,6 +9,7 @@ const { expressCors } = require('../middlewares/corsConfig');
 const { socketCorsOptions } = require('../middlewares/corsConfig');
 const globalState = require('../utils/state');
 const { generateFileTree } = require('../services/fileService')
+const { ptyProcess } = require('../server/terminal')
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,9 @@ connectDB();
 app.use(expressCors)
 app.use(express.json());
 
+// Socket setup
+setupSocket(io);
+
 // init
 (async () => {
     try {
@@ -31,11 +35,10 @@ app.use(express.json());
     }
 })();
 
+
 // Routes
 app.use('/api', apiRoutes);
 
-// Socket setup
-setupSocket(io);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
