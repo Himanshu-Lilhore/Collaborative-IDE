@@ -9,6 +9,7 @@ import Terminal from './components/Terminal';
 import InfoPanel from './components/InfoPanel'
 import Explorer from './components/Explorer';
 import socket from './util/socket';
+import OpenedFiles from './components/OpenedFiles';
 
 Axios.defaults.withCredentials = true;
 
@@ -16,6 +17,7 @@ export default function App() {
     const [user, setUser] = useState<string>('DEFAULT')
     const editorRef = useRef<any>(null)
     const ydoc = useRef(new Y.Doc()).current;
+    const [ytext, setYtext] = useState(ydoc.getText('default'));
     const provider = useRef(
         new SocketIOProvider(
             import.meta.env.VITE_BACKEND_URL,
@@ -23,18 +25,16 @@ export default function App() {
             ydoc,
             { autoConnect: true }
         )
-    ).current;
+    );
     const handleEditorDidMount = useRef<any>();
     const decorations = useRef<any>(null);
     const [trigger, setTrigger] = useState<any>(Date())
     const [language, setLanguage] = useState('html');
+    const [currFile, setCurrFile] = useState<string>('default');
 
 
     useEffect(() => {
-        console.log(`user id set to : ${user}`);
-
         handleEditorDidMount.current = (editor: any, monaco: any) => {
-            console.log("Redefining mounting function ...")
             // Editor configurations
             monaco.editor.defineTheme('custom-theme', {
                 base: 'vs-dark',
@@ -55,7 +55,7 @@ export default function App() {
                 const endLine = selection.endLineNumber;
                 const endColumn = selection.endColumn;
 
-                const currentState = provider.awareness.getLocalState()?.cursor?.range;
+                const currentState = provider.current.awareness.getLocalState()?.cursor?.range;
                 const newState = { startLine, startColumn, endLine, endColumn };
 
                 // Avoid triggering updates if the cursor hasn't changed
@@ -65,23 +65,23 @@ export default function App() {
                     // Update awareness with cursor/selection data
                     let newCursor: any = { user: user, range: newState };
 
-                    const currentAwareness = provider.awareness.getLocalState();
+                    const currentAwareness = provider.current.awareness.getLocalState();
                     // console.log('currentAwareness', currentAwareness); /////////////
                     if (currentAwareness && currentAwareness.cursor) {
                         newCursor = null; // Clear old cursor state
                     }
 
-                    provider.awareness.setLocalStateField('cursor', newCursor);
+                    provider.current.awareness.setLocalStateField('cursor', newCursor);
                     console.log(newCursor); ////////////////
                 }
             });
 
             // Listen to awareness changes and update decorations
-            provider.awareness.on('change', (_added: any, _updated: any, _removed: any) => {
-                const states = Array.from(provider.awareness.getStates().entries());
+            provider.current.awareness.on('change', (_added: any, _updated: any, _removed: any) => {
+                const states = Array.from(provider.current.awareness.getStates().entries());
 
                 const remoteCursors = states
-                    .filter(([clientId]) => clientId !== provider.awareness.clientID)
+                    .filter(([clientId]) => clientId !== provider.current.awareness.clientID)
                     .map(([, state]) => state.cursor)
                     .filter(Boolean)
 
@@ -109,15 +109,21 @@ export default function App() {
 
 
             editorRef.current = editor;
-            const ytext = ydoc.getText('code');
-            new MonacoBinding(ytext, editorRef.current.getModel(), new Set([editorRef.current]), provider.awareness);
-
+            new MonacoBinding(ytext, editorRef.current.getModel(), new Set([editorRef.current]), provider.current.awareness);
+            
             socket.on('disconnected', () => {
                 setTrigger(new Date().getTime())
                 console.log('disconnection received');
                 if (decorations.current) decorations.current.clear();
             });
         }
+        
+        setTrigger(new Date());  // to rerender the editor on selecting new doc
+    }, [ytext])
+
+
+    useEffect(() => {
+        console.log(`user id set to : ${user}`);//////////////
     }, [user])
 
 
@@ -138,8 +144,6 @@ export default function App() {
                 socket.emit('update', update);
             }
         });
-
-
         // debugger
         // const ytext = ydoc.getText('code');
         // ytext.observe(event => {
@@ -156,8 +160,6 @@ export default function App() {
         //         }
         //     });
         // });
-
-
         return () => {
             socket.off('initialState', initialStateHandler);
         };
@@ -169,9 +171,10 @@ export default function App() {
             <InfoPanel user={user} language={language} setLanguage={setLanguage} />
 
             <div className='flex flex-row'>
-                <Explorer />
+                <Explorer setYtext={setYtext} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
                 <div className='flex flex-col h-full w-full'>
                     <div className='h-3/5'>
+                        <OpenedFiles currFile={currFile} />
                         <CodeEditor
                             trigger={trigger}
                             handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}

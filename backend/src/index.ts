@@ -5,7 +5,8 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const Y = require('yjs');
-const fs = require('fs/promises');
+const fs = require('fs');
+const fsPromises = require('fs/promises');
 const path = require('path')
 var os = require('os');
 const { encodeStateAsUpdate, applyUpdate } = require('yjs');
@@ -16,6 +17,7 @@ const chokidar = require('chokidar');
 const {v4:uuidv4} = require('uuid');
 
 connectDB();
+let fileTree = generateFileTree('./user');
 
 var shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
@@ -27,10 +29,11 @@ const ptyProcess = pty.spawn(shell, [], {
     env: process.env
 });
 
+
 ptyProcess.onData((data: any) => {
-    // console.log("Data : ", data)
     io.emit('terminal', data)
 })
+
 
 app.use(express.json());
 app.use(cors({
@@ -39,10 +42,10 @@ app.use(cors({
     credentials: true
 }));
 
-// Create an HTTP server
+
 const server = http.createServer(app);
 
-// Attach socket.io to the same server instance
+
 const io = socketIo(server, {
     connectionStateRecovery: {},
     cors: {
@@ -52,50 +55,34 @@ const io = socketIo(server, {
     }
 });
 
-// Create the Yjs document
+
 const ydoc = new Y.Doc();
-const ytext = ydoc.getText('code');
 
-// Function to save only the actual update
-function saveYjsState() {
-    // Encode the Yjs document's state as an update
+
+async function saveYjsState() {
     const update = encodeStateAsUpdate(ydoc);
-
-    // Save the update (could be to a file or a database)
-    fs.writeFileSync('doc-state.bin', update);
-
-    // Optionally log the change to the console
+    await fsPromises.writeFile('doc-state.bin', update);
     console.log('Yjs update saved to file.');
 }
 
-// Set up an observer to track changes in the Yjs document
-ytext.observe((event: any) => {
-    console.log('Document change detected:');
 
-    event.changes.keys.forEach((change: any, key: any) => {
-        console.log(`Key: ${key}, Change: ${JSON.stringify(change)}`);
-    });
-
-    saveYjsState();
-});
-
-// Load Yjs state from file (optional: to persist between server restarts)
 function loadYjsState() {
     if (fs.existsSync('doc-state.bin')) {
         const savedState = fs.readFileSync('doc-state.bin');
-        applyUpdate(ydoc, savedState);  // Apply the saved state to the Yjs document
+        applyUpdate(ydoc, savedState);
         console.log('Yjs state loaded from file');
     }
 }
+loadYjsState();  // Load any saved state when the server starts
 
-// loadYjsState();  // Load any saved state when the server starts
+
 let clients = new Map();
+
 
 io.on('connection', async (socket: any) => {
     console.log(`Socket connected: ${socket.id}`);
     ptyProcess.write('cls\r');
-    let fileTree = await generateFileTree('./user');
-    socket.emit('files', fileTree )
+    socket.emit('files', await fileTree )
 
     // On new connection, send the current Yjs state to the client
     const update = encodeStateAsUpdate(ydoc);
@@ -104,8 +91,8 @@ io.on('connection', async (socket: any) => {
 
     socket.on('update', (clientUpdate: any) => {
         try {
-            const updateArray = new Uint8Array(clientUpdate); // Convert received data back to Uint8Array
-            applyUpdate(ydoc, updateArray); // Apply update to the backend Yjs document
+            const updateArray = new Uint8Array(clientUpdate);
+            applyUpdate(ydoc, updateArray);
             console.log(`Applied update from ${socket.id}`);
 
             // Broadcast the update to all other connected clients
@@ -135,11 +122,14 @@ io.on('connection', async (socket: any) => {
         io.emit('disconnected');
     })
 
-    socket.on('files', async () => {
-        fileTree = await generateFileTree('./user');
-        console.log("Emitting file tree ...")
-        io.emit('files', fileTree )
-    })
+    socket.on('filechange', (id: string) => {
+        console.log('Changed file to:', id);
+    });
+    // socket.on('files', async () => {
+    //     fileTree = await generateFileTree('./user');
+    //     console.log("Emitting file tree ...")
+    //     io.emit('files', fileTree )
+    // })
 });
 
 
@@ -149,20 +139,18 @@ io.on('connection', async (socket: any) => {
 // })
 
 
-
-
 chokidar.watch('./user').on('all', (event:any, path:any) => {
     io.emit('file:refresh', path)
 });
 
 
 async function buildTree(currentDir:any, currentTree:any) {
-    const items = await fs.readdir(currentDir)
+    const items = await fsPromises.readdir(currentDir)
 
     for (const item of items) {
         let tempObj:any = {name:item, id:uuidv4()};
         const itemPath = path.join(currentDir, item)
-        const stat = await fs.stat(itemPath)
+        const stat = await fsPromises.stat(itemPath)
 
         if (stat.isDirectory()) {
             tempObj.children = []
