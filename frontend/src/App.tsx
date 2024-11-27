@@ -14,7 +14,7 @@ import OpenedFiles from './components/OpenedFiles';
 Axios.defaults.withCredentials = true;
 
 export default function App() {
-    const [user, setUser] = useState<string>('DEFAULT')
+    const [user, setUser] = useState<string>('default')
     const editorRef = useRef<any>(null)
     const ydoc = useRef(new Y.Doc()).current;
     const [ytext, setYtext] = useState(ydoc.getText('default'));

@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 const pty = require('node-pty')
 const connectDB = require('../config/mongodb')
 const chokidar = require('chokidar');
-const {v4:uuidv4} = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 connectDB();
 let fileTree = generateFileTree('./user');
@@ -82,12 +82,17 @@ let clients = new Map();
 io.on('connection', async (socket: any) => {
     console.log(`Socket connected: ${socket.id}`);
     ptyProcess.write('cls\r');
-    socket.emit('files', await fileTree )
+    socket.emit('files', await fileTree)
 
     // On new connection, send the current Yjs state to the client
     const update = encodeStateAsUpdate(ydoc);
     console.log('Sending initial state (length):', update.length);
     socket.emit('initialState', socket.id, update);
+
+    // Initializing default doc
+    const ytext = ydoc.getText('default');
+    ytext.delete(0, ytext.length);
+    ytext.insert(0, '// open a file to start working');
 
     socket.on('update', (clientUpdate: any) => {
         try {
@@ -139,16 +144,16 @@ io.on('connection', async (socket: any) => {
 // })
 
 
-chokidar.watch('./user').on('all', (event:any, path:any) => {
+chokidar.watch('./user').on('all', (event: any, path: any) => {
     io.emit('file:refresh', path)
 });
 
 
-async function buildTree(currentDir:any, currentTree:any) {
+async function buildTree(currentDir: any, currentTree: any) {
     const items = await fsPromises.readdir(currentDir)
 
     for (const item of items) {
-        let tempObj:any = {name:item, id:uuidv4()};
+        let tempObj: any = { name: item, id: uuidv4() };
         const itemPath = path.join(currentDir, item)
         const stat = await fsPromises.stat(itemPath)
 
@@ -163,8 +168,8 @@ async function buildTree(currentDir:any, currentTree:any) {
 }
 
 
-async function generateFileTree(directory:any) {
-    const tree:any = {name:'root', id:'root', children:[]}
+async function generateFileTree(directory: any) {
+    const tree: any = { name: 'root', id: 'root', children: [] }
 
     await buildTree(directory, tree.children);
     return tree
@@ -174,6 +179,6 @@ async function generateFileTree(directory:any) {
 // Periodically save the Yjs state to ensure changes are persisted
 // setInterval(() => {
 //     saveYjsState();
-// }, 2000);  // Save every few minutes
+// }, 5000);  // Save every few minutes
 
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
