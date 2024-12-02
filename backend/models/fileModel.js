@@ -6,7 +6,7 @@ const fileSchema = new mongoose.Schema({
         required: true
     },
     data: {
-        type: String | null,
+        type: String,   // if gridFs, data : "gridfs.<gridfs_obj_id>"
         default: null
     },
     lastUpdatedBy: {

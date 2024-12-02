@@ -16,16 +16,6 @@ const projectSchema = new mongoose.Schema({
     liveLink: {
         type: String
     },
-    projectname: {
-        type: String,
-        require: true,
-        minlength: 4
-    },
-    githubProjectname: {
-        type: String,
-        require: true,
-        minlength: 4
-    },
     lastUpdatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
