@@ -32,16 +32,20 @@ const setupSocket = (io) => {
             }
         });
 
-        socket.on('filecachecheck', async (fileId) => {
+        socket.on('filecachecheck', async (fileId, callback) => {
             let file = globalState.yjsCache.get(fileId);
             if (!file) {
-                console.log(`Loading file ${fileId} from DB...`);
                 file = await getFile(fileId); // Loading file from DB
-                console.log(file.name, file.data)
-                let ytext = ydoc.getText(fileId)
+                console.log(`Loading file ${fileId} from DB to cache : ${file.data}`);
+                let docMap = ydoc.getMap('documents')
+                let ytext = new Y.Text();
                 ytext.insert(0, file.data)
+                docMap.set(fileId, ytext);
                 globalState.yjsCache.put(fileId);
-                io.emit('refresh', encodeStateAsUpdate(ydoc));
+                callback({newDoc: Y.encodeStateAsUpdate(ydoc), fileWasInCache: false})
+            } else {
+                console.log('file was already in cache')
+                callback({fileWasInCache: true})
             }
             console.log("cache : ", globalState.yjsCache);
         });

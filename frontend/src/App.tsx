@@ -13,11 +13,18 @@ import OpenedFiles from './components/OpenedFiles';
 
 Axios.defaults.withCredentials = true;
 
+interface FileTreeNode {
+    name: string,
+    id: string,
+    children: FileTreeNode[] | null
+}
+
 export default function App() {
     const [user, setUser] = useState<string>('default')
     const editorRef = useRef<any>(null)
     let ydoc = useRef(new Y.Doc()).current;
-    const [ytext, setYtext] = useState(ydoc.getText('default'));
+    let docMap = useRef(ydoc.getMap('documents')).current;
+    const [ytext, setYtext] = useState<Y.Text | any>(ydoc.getText('default'));
     const provider = useRef(
         new SocketIOProvider(
             import.meta.env.VITE_BACKEND_URL,
@@ -30,7 +37,26 @@ export default function App() {
     const decorations = useRef<any>(null);
     const [trigger, setTrigger] = useState<any>(Date())
     const [language, setLanguage] = useState('html');
-    const [currFile, setCurrFile] = useState<string>('default');
+    const [currFile, setCurrFile] = useState<FileTreeNode>({name:'root', id:'root', children:null});
+
+
+    const loadDocument = (docId: string) => {
+        let currentYtext = docMap.get(docId);
+        if (!currentYtext) {
+            console.log("Doc didn't exist")
+            // If the document doesn't exist, create a new Y.Text and store it in the Y.Map
+            currentYtext = new Y.Text();
+            docMap.set(docId, currentYtext);
+            console.log(`Created a new document with ID: ${docId}`);
+        } else {
+            console.log("Doc exists")
+        }
+        setYtext(currentYtext); // Update the state to use this Y.Text
+    };
+
+    useEffect(() => {
+        loadDocument('default'); // Replace 'default' with the desired document ID
+    }, []);
 
 
     useEffect(() => {
@@ -110,23 +136,27 @@ export default function App() {
 
             editorRef.current = editor;
             new MonacoBinding(ytext, editorRef.current.getModel(), new Set([editorRef.current]), provider.current.awareness);
-            
+
             socket.on('disconnected', () => {
                 setTrigger(new Date().getTime())
                 console.log('disconnection received');
                 if (decorations.current) decorations.current.clear();
             });
         }
-        
+
         setTrigger(new Date().getTime());  // to rerender the editor on selecting new doc
+        console.log('useEffect run complete...')
     }, [ytext])
-    
-    
+
+
     useEffect(() => {
         console.log(`user id set to : ${user}`);//////////////
-        
     }, [user])
-    
+
+    useEffect(() => {
+        console.log(`currFile set to : ${currFile.name}`);/////////////S
+    }, [currFile])
+
 
 
     const initialStateHandler = (id: string, initialState: Uint8Array) => {
@@ -135,22 +165,18 @@ export default function App() {
 
         Y.applyUpdate(ydoc, new Uint8Array(initialState));
     };
-    
+
 
     useEffect(() => {
         socket.on('initialState', initialStateHandler);
-        
+
         ydoc.on('update', (_upt, origin) => {
             if (origin !== provider) {
                 const update = Y.encodeStateAsUpdate(ydoc);
                 socket.emit('update', update);
             }
         });
-        
-        socket.on('refresh', (updatedState:any) => {
-            Y.applyUpdate(ydoc, new Uint8Array(updatedState));
-            console.log("updated whole ydoc...")
-        })
+
         // debugger
         // const ytext = ydoc.getText('code');
         // ytext.observe(event => {
@@ -178,7 +204,7 @@ export default function App() {
             <InfoPanel user={user} language={language} setLanguage={setLanguage} />
 
             <div className='flex flex-row'>
-                <Explorer setYtext={setYtext} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
+                <Explorer Y={Y} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
                 <div className='flex flex-col h-full w-full'>
                     <div className='h-3/5'>
                         <OpenedFiles currFile={currFile} />

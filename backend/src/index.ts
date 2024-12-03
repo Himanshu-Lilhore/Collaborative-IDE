@@ -32,7 +32,6 @@ setupSocket(io);
 // init
 (async () => {
     try {
-        // globalState.ydoc = new Y.Doc();
         globalState.yjsCache = new LRUCache(10);
         globalState.currProject = await Project.findById('674e34865df7c7f91602ea41');
         console.log('Project loaded:', globalState.currProject.fileTree);
