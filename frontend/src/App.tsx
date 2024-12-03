@@ -16,7 +16,7 @@ Axios.defaults.withCredentials = true;
 export default function App() {
     const [user, setUser] = useState<string>('default')
     const editorRef = useRef<any>(null)
-    const ydoc = useRef(new Y.Doc()).current;
+    let ydoc = useRef(new Y.Doc()).current;
     const [ytext, setYtext] = useState(ydoc.getText('default'));
     const provider = useRef(
         new SocketIOProvider(
@@ -118,13 +118,15 @@ export default function App() {
             });
         }
         
-        setTrigger(new Date());  // to rerender the editor on selecting new doc
+        setTrigger(new Date().getTime());  // to rerender the editor on selecting new doc
     }, [ytext])
-
-
+    
+    
     useEffect(() => {
         console.log(`user id set to : ${user}`);//////////////
+        
     }, [user])
+    
 
 
     const initialStateHandler = (id: string, initialState: Uint8Array) => {
@@ -133,17 +135,22 @@ export default function App() {
 
         Y.applyUpdate(ydoc, new Uint8Array(initialState));
     };
-
+    
 
     useEffect(() => {
         socket.on('initialState', initialStateHandler);
-
+        
         ydoc.on('update', (_upt, origin) => {
             if (origin !== provider) {
                 const update = Y.encodeStateAsUpdate(ydoc);
                 socket.emit('update', update);
             }
         });
+        
+        socket.on('refresh', (updatedState:any) => {
+            Y.applyUpdate(ydoc, new Uint8Array(updatedState));
+            console.log("updated whole ydoc...")
+        })
         // debugger
         // const ytext = ydoc.getText('code');
         // ytext.observe(event => {

@@ -3,6 +3,7 @@ const express = require('express');
 // const authRoutes = require('./authRoutes');
 // const terminalRoutes = require('./terminalRoutes');
 const fileController = require('../controllers/fileController');
+const projectRoutes = require('./projectRoutes');
 
 const router = express.Router();
 
@@ -10,5 +11,6 @@ const router = express.Router();
 // router.use('/auth', authRoutes);       // Routes under /api/auth
 // router.use('/terminal', terminalRoutes); // Routes under /api/terminal
 router.use('/file', fileController);
+router.use('/project', projectRoutes);
 
 module.exports = router;

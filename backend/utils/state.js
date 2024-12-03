@@ -1,9 +1,13 @@
-let fileTree = null;
 let clients = new Map();
+let currProject;
+let yjsCache;
+let ydoc;
 
 const globalState = {
-    fileTree,
+    currProject,
     clients,
+    yjsCache,
+    ydoc
 };
 
 module.exports = globalState;
