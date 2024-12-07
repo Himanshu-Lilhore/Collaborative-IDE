@@ -26,7 +26,7 @@ const setupSocket = (io) => {
             try {
                 const updateArray = new Uint8Array(clientUpdate);
                 applyUpdate(ydoc, updateArray);
-                socket.broadcast.emit('update', clientUpdate);
+                // socket.broadcast.emit('update', clientUpdate);
             } catch (err) {
                 console.error('Error applying update:', err);
             }
@@ -41,7 +41,7 @@ const setupSocket = (io) => {
                 let ytext = new Y.Text();
                 ytext.insert(0, file.data)
                 docMap.set(fileId, ytext);
-                globalState.yjsCache.put(fileId);
+                await globalState.yjsCache.put(fileId);
                 callback({newDoc: Y.encodeStateAsUpdate(ydoc), fileWasInCache: false})
             } else {
                 console.log('file was already in cache')

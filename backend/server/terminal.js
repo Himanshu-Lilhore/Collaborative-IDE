@@ -5,7 +5,7 @@ const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-color',
     // cols: 10,
-    rows: 10,
+    rows: 13,
     cwd: process.env.INIT_CWD + '/user',
     env: process.env,
 });

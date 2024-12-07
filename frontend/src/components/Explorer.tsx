@@ -1,6 +1,9 @@
 import socket from "../util/socket";
 import { useEffect, useState } from "react";
 import SaveIcon from "../assets/SaveIcon.tsx"
+import axios from 'axios';
+import colors from '../util/colors'
+
 
 interface FileTreeNode {
     name: string,
@@ -8,7 +11,7 @@ interface FileTreeNode {
     children: FileTreeNode[] | null
 }
 
-export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, currFile, setCurrFile }: { Y:any, loadDocument: any, ydoc: any, provider: any, editorRef: any, currFile: FileTreeNode, setCurrFile: any }) {
+export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, currFile, setCurrFile }: { Y: any, loadDocument: any, ydoc: any, provider: any, editorRef: any, currFile: FileTreeNode, setCurrFile: any }) {
     const [fileTree, setFileTree] = useState<FileTreeNode>({ name: 'root', id: 'root', children: null });
 
 
@@ -24,14 +27,31 @@ export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, c
     }, [])
 
 
+    const saveProj = async () => {
+        console.log('sending save project request ...')
+
+        try{
+            axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
+                .then(response => {
+                    console.log('Data saved successfully:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error saving data:', error);
+                });
+        } catch(err:any) {
+            console.log(err.message);
+        }
+    }
+
+
     return (
-        <div className="flex flex-col gap-1 w-60 h-fill bg-sky-800/60 p-1 select-none">
+        <div className={`flex flex-col gap-1 w-60 h-fill ${colors.primary1} p-1 px-2 select-none`}>
             <div className="border border-black bg-blue-900/50 font-bold text-center">EXPLORER</div>
             <div className="flex flex-row gap-1 justify-end font-bold text-center">
                 <button className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+folder</button>
                 <button className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+file</button>
-                <button className="flex-auto hover:scale-105 flex justify-center items-center">
-                    <SaveIcon color={`#000`}/>
+                <button onClick={() => saveProj()} className="flex-auto hover:scale-105 flex justify-center items-center">
+                    <SaveIcon color={`#000`} />
                 </button>
             </div>
             <div className="p-1">
@@ -43,15 +63,15 @@ export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, c
 }
 
 
-function TreeNode({ Y, node, loadDocument, ydoc, currFile, setCurrFile, provider, editorRef }: { Y:any, node: FileTreeNode, loadDocument: any, ydoc: any, currFile: FileTreeNode, setCurrFile: any, provider: any, editorRef: any }) {
+function TreeNode({ Y, node, loadDocument, ydoc, currFile, setCurrFile, provider, editorRef }: { Y: any, node: FileTreeNode, loadDocument: any, ydoc: any, currFile: FileTreeNode, setCurrFile: any, provider: any, editorRef: any }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toggleExpand = () => setIsExpanded(!isExpanded);
 
 
     const openFile = (node: FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
-        socket.emit('filecachecheck', node.id, (response:any) => {
-            if(!response.fileWasInCache) {
+        socket.emit('filecachecheck', node.id, (response: any) => {
+            if (!response.fileWasInCache) {
                 Y.applyUpdate(ydoc, new Uint8Array(response.newDoc));
                 console.log("File was NOT in cache")
             } else {

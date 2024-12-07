@@ -7,7 +7,7 @@ const socket = io(import.meta.env.VITE_BACKEND_URL);
 export default function Terminal() {
     const terminalRef = useRef<any>();
     const term = useRef<any>(new XTerminal({
-        rows: 10,
+        rows: 13,
     })).current;
 
     useEffect(() => {
@@ -25,6 +25,10 @@ export default function Terminal() {
     }, [])
 
     return (
-        <div ref={terminalRef} />
+        <div className='flex flex-row relative'>
+            <div className='bg-orange-500 z-10 font-mono font-bold pb-1 rotate-180 text-end' style={{textOrientation:'mixed', writingMode:'vertical-lr'}}>terminal_</div>
+            <div className='h-full p-1 bg-black'></div>
+            <div ref={terminalRef} className='w-full'/>
+        </div>
     );
 }

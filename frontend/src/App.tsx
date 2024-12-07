@@ -10,7 +10,7 @@ import InfoPanel from './components/InfoPanel'
 import Explorer from './components/Explorer';
 import socket from './util/socket';
 import OpenedFiles from './components/OpenedFiles';
-
+import colors from './util/colors'
 Axios.defaults.withCredentials = true;
 
 interface FileTreeNode {
@@ -24,6 +24,7 @@ export default function App() {
     const editorRef = useRef<any>(null)
     let ydoc = useRef(new Y.Doc()).current;
     let docMap = useRef(ydoc.getMap('documents')).current;
+    const unsavedDocsMap = useRef<Y.Map<string>>(ydoc.getMap('unsavedDocs')).current;
     const [ytext, setYtext] = useState<Y.Text | any>(ydoc.getText('default'));
     const provider = useRef(
         new SocketIOProvider(
@@ -37,7 +38,7 @@ export default function App() {
     const decorations = useRef<any>(null);
     const [trigger, setTrigger] = useState<any>(Date())
     const [language, setLanguage] = useState('html');
-    const [currFile, setCurrFile] = useState<FileTreeNode>({name:'root', id:'root', children:null});
+    const [currFile, setCurrFile] = useState<FileTreeNode>({ name: 'root', id: 'root', children: null });
 
 
     const loadDocument = (docId: string) => {
@@ -177,44 +178,47 @@ export default function App() {
             }
         });
 
-        // debugger
-        // const ytext = ydoc.getText('code');
-        // ytext.observe(event => {
-        //     console.log('Document Change Detected:');
-        //     event.changes.delta.forEach(change => {
-        //         if (change.insert) {
-        //             console.log('Inserted:', change.insert);
-        //         }
-        //         if (change.delete) {
-        //             console.log('Deleted:', change.delete);
-        //         }
-        //         if (change.retain) {
-        //             console.log('Retained:', change.retain);
-        //         }
-        //     });
-        // });
+        ytext.observe((_event: any) => {
+            if (!unsavedDocsMap.has(currFile.id)) {
+                unsavedDocsMap.set(currFile.id, new Date().getTime().toString())
+                console.log(`${currFile.name} added to unsaved docs`);
+            }
+
+            // You can inspect the changes in the event
+            // event.delta.forEach((change:any) => {
+            //     if (change.insert) {
+            //         console.log('Inserted text:', change.insert);
+            //     }
+            //     if (change.delete) {
+            //         console.log('Deleted characters:', change.delete);
+            //     }
+            //     if (change.retain) {
+            //         console.log('Retained characters:', change.retain);
+            //     }
+            // });
+        });
+
         return () => {
             socket.off('initialState', initialStateHandler);
         };
-    }, [ydoc]);
+    }, [ydoc, ytext]);
 
 
     return (
-        <div className=''>
+        <div className='relative text-white'>
             <InfoPanel user={user} language={language} setLanguage={setLanguage} />
 
             <div className='flex flex-row'>
                 <Explorer Y={Y} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
-                <div className='flex flex-col h-full w-full'>
-                    <div className='h-3/5'>
+
+                <div className={`flex flex-col w-full ${colors.primary1}`}>
+                    <div className='flex flex-col flex-1 rounded-xl border-2 border-gray-900/70 overflow-hidden bg-white'>
                         <OpenedFiles currFile={currFile} />
                         <CodeEditor
                             trigger={trigger}
                             handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}
                             language={language}
                         />
-                    </div>
-                    <div >
                         <Terminal />
                     </div>
                 </div>

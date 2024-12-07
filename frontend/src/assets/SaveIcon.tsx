@@ -14,7 +14,7 @@ const SaveIcon = ({ color = '#000000', ...props }: { color?: string }) => (
             strokeLinejoin="round"
         />
         <g id="SVGRepo_iconCarrier">
-            <title>{"save_item [#1411]"}</title>
+            <title>{"Save Project"}</title>
             <desc>{"Created with Sketch."}</desc>
             <defs />
             <g

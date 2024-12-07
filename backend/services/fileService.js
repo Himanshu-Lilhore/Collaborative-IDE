@@ -107,7 +107,7 @@ async function updateFile(fileId, newFileName, newFileContent, userId) {
     const fileSizeInMB = Buffer.byteLength(newFileContent, 'utf-8') / (1024 * 1024);
 
     file.name = newFileName || file.name;
-    file.lastUpdatedBy = userId;
+    file.lastUpdatedBy = userId || file.lastUpdatedBy;
 
     if (fileSizeInMB <= 10) {
         if (file.data && file.data.startsWith('gridfs.')) {
