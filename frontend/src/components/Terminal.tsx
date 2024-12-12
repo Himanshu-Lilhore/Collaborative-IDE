@@ -1,3 +1,4 @@
+import TerminalIcon from '@/assets/TerminalIcon';
 import { Terminal as XTerminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { useEffect, useRef } from 'react';
@@ -26,9 +27,14 @@ export default function Terminal() {
 
     return (
         <div className='flex flex-row relative'>
-            <div className='bg-orange-500 z-10 font-mono font-bold pb-1 rotate-180 text-end' style={{textOrientation:'mixed', writingMode:'vertical-lr'}}>terminal_</div>
+            <div className='relative bg-orange-500 z-10 text-lg font-mono pb-8 pl-1 rotate-180 text-end text-black text-nowrap' style={{ textOrientation: 'mixed', writingMode: 'vertical-lr' }}>
+                terminal
+                <div className='absolute bottom-1 right-1 rotate-180'>
+                    <TerminalIcon />
+                </div>
+            </div>
             <div className='h-full p-1 bg-black'></div>
-            <div ref={terminalRef} className='w-full'/>
+            <div ref={terminalRef} className='w-full' />
         </div>
     );
 }

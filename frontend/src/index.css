@@ -8,6 +8,16 @@
     animation: blink 1s step-start infinite;
 }
 
+
+.open-sans-medium {
+  font-family: "Open Sans", Helvetica, sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}
+
 @keyframes blink {
     50% {
         opacity: 50;

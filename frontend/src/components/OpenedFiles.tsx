@@ -1,6 +1,6 @@
 import CloseIcon from "../assets/CloseIcon";
 import colors from '../util/colors'
-import Logo from "@/assets/Logo";
+import Logo from "@/assets/Euro";
 
 interface FileTreeNode {
     name: string,

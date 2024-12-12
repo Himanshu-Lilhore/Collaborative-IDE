@@ -30,7 +30,7 @@ export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, c
     const saveProj = async () => {
         console.log('sending save project request ...')
 
-        try{
+        try {
             axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
                 .then(response => {
                     console.log('Data saved successfully:', response.data);
@@ -38,7 +38,7 @@ export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, c
                 .catch(error => {
                     console.error('Error saving data:', error);
                 });
-        } catch(err:any) {
+        } catch (err: any) {
             console.log(err.message);
         }
     }

@@ -37,7 +37,7 @@ export const AnimatedTooltip = ({
   };
 
   return (
-    <>
+    <div className="flex flex-row p-1 items-center">
       {items.map((item) => (
         <div
           className="-mr-2 relative group"
@@ -79,6 +79,6 @@ export const AnimatedTooltip = ({
             style={{ backgroundColor: item.name }}></div>
         </div>
       ))}
-    </>
+    </div>
   );
 };

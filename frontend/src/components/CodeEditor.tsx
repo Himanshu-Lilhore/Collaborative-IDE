@@ -14,7 +14,7 @@ export default function CodeEditor({ handleEditorDidMount, trigger, language }: 
 						enabled: false,
 					},
 				}}
-				height="64vh"
+				height="61.18vh"
 				theme="vs-dark"
 				language={language}
 				onMount={handleEditorDidMount}
