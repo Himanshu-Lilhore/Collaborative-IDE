@@ -1,13 +1,14 @@
 const Y = require('yjs');
 const { encodeStateAsUpdate, applyUpdate } = require('yjs');
-const { saveYjsState, loadYjsState } = require('../services/yjsService');
+// const { saveYjsState, loadYjsState } = require('../services/yjsService');
 const { ptyProcess } = require('../server/terminal');
 const globalState = require('../utils/state');
 const { getFile } = require('../services/fileService')
 
 const setupSocket = (io) => {
     const ydoc = new Y.Doc();
-    loadYjsState(ydoc);
+    let docMap = ydoc.getMap('documents')
+    // loadYjsState(ydoc);
 
     ptyProcess.onData((data) => {
         io.emit('terminal', data)
@@ -33,7 +34,8 @@ const setupSocket = (io) => {
         });
 
         socket.on('filecachecheck', async (fileId, callback) => {
-            let file = globalState.yjsCache.get(fileId);
+            // let file = globalState.yjsCache.get(fileId);
+            let file = docMap.get(fileId);
             if (!file) {
                 file = await getFile(fileId); // Loading file from DB
                 console.log(`Loading file ${fileId} from DB to cache : ${file.data}`);
@@ -41,7 +43,7 @@ const setupSocket = (io) => {
                 let ytext = new Y.Text();
                 ytext.insert(0, file.data)
                 docMap.set(fileId, ytext);
-                await globalState.yjsCache.put(fileId);
+                // await globalState.yjsCache.put(fileId);
                 callback({newDoc: Y.encodeStateAsUpdate(ydoc), fileWasInCache: false})
             } else {
                 console.log('file was already in cache')

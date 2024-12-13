@@ -11,6 +11,7 @@ import Explorer from './components/Explorer';
 import socket from './util/socket';
 import OpenedFiles from './components/OpenedFiles';
 import colors from './util/colors'
+
 Axios.defaults.withCredentials = true;
 
 interface FileTreeNode {
@@ -205,24 +206,26 @@ export default function App() {
 
 
     return (
-        <div className='relative text-white'>
-            <InfoPanel user={user} language={language} setLanguage={setLanguage} />
+        <>
+            <div className='relative text-white'>
+                <InfoPanel user={user} language={language} setLanguage={setLanguage} />
 
-            <div className='flex flex-row'>
-                <Explorer Y={Y} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
+                <div className='flex flex-row'>
+                    <Explorer Y={Y} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />
 
-                <div className={`flex flex-col w-full ${colors.primary1}`}>
-                    <div className='flex flex-col flex-1 rounded-xl border-2 border-gray-900/70 overflow-hidden bg-white'>
-                        <OpenedFiles currFile={currFile} />
-                        <CodeEditor
-                            trigger={trigger}
-                            handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}
-                            language={language}
-                        />
-                        <Terminal />
+                    <div className={`flex flex-col w-full ${colors.primary1}`}>
+                        <div className='flex flex-col flex-1 rounded-xl border-2 border-gray-900/70 overflow-hidden bg-white'>
+                            <OpenedFiles currFile={currFile} />
+                            <CodeEditor
+                                trigger={trigger}
+                                handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}
+                                language={language}
+                            />
+                            <Terminal />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }

@@ -70,7 +70,7 @@ function TreeNode({ Y, node, loadDocument, ydoc, currFile, setCurrFile, provider
 
     const openFile = (node: FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
-        socket.emit('filecachecheck', node.id, (response: any) => {
+        socket.emit('filecachecheck', node.id, async (response: any) => {
             if (!response.fileWasInCache) {
                 Y.applyUpdate(ydoc, new Uint8Array(response.newDoc));
                 console.log("File was NOT in cache")

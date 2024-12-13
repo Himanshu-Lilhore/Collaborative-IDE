@@ -12,6 +12,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-select": "^2.1.2",
+    "@radix-ui/react-toast": "^1.2.3",
     "@reduxjs/toolkit": "^2.5.0",
     "@tabler/icons-react": "^3.24.0",
     "@xterm/xterm": "^5.5.0",
@@ -24,6 +25,7 @@
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
     "react-resizable-panels": "^2.1.7",
+    "react-router-dom": "^7.0.2",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

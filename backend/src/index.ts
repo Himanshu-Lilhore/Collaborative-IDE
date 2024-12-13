@@ -11,7 +11,8 @@ const globalState = require('../utils/state');
 const { generateFileTree } = require('../services/fileService')
 const { ptyProcess } = require('../server/terminal')
 const Project = require('../models/projectModel');
-const { LRUCache } = require('../services/LRUCache')
+const chokidar = require('chokidar');
+// const { LRUCache } = require('../services/LRUCache')
 const Y = require('yjs');
 
 
@@ -32,13 +33,16 @@ setupSocket(io);
 // init
 (async () => {
     try {
-        globalState.yjsCache = new LRUCache(10);
+        // globalState.yjsCache = new LRUCache(10);
         globalState.currProject = await Project.findById('674e34865df7c7f91602ea41');
         console.log('Project loaded:', globalState.currProject.fileTree);
     } catch (error) {
         console.error('Error initializing file tree:', error);
     }
 })();
+chokidar.watch('./user').on('all', (event:any, path:any) => {
+    io.emit('file:refresh', path)
+});
 
 // Routes
 app.use('/api', apiRoutes);

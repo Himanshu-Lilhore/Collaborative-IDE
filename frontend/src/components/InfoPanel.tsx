@@ -7,6 +7,10 @@ import ChatIcon from '@/assets/ChatIcon'
 import VideoIcon from '@/assets/VideoIcon'
 import ShareIcon from '@/assets/ShareIcon'
 import UserIcon from '@/assets/UserIcon'
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'
+
+
 const users = [
     { id: 1, name: 'blue', designation: '', image: '' },
     { id: 2, name: 'green', designation: '', image: '' },
@@ -15,6 +19,8 @@ const users = [
 ]
 
 export default function InfoPanel({ user, language, setLanguage }: { user: string, language: any, setLanguage: any }) {
+    const navigate = useNavigate()
+
     return (
         <div className={`flex flex-row p-2 justify-between items-center w-full ${colors.primary1}`}>
             <div className='flex flex-row gap-2 justify-between items-center px-2'>
@@ -44,12 +50,19 @@ export default function InfoPanel({ user, language, setLanguage }: { user: strin
                 {/* vid call  */}
                 <div><VideoIcon /></div>
                 {/* share */}
-                <button className='flex flex-row rounded-sm justify-between items-center gap-1 py-1 px-4 bg-blue-500 hover:bg-blue-600'>
+                <button className='flex flex-row rounded-sm justify-between items-center gap-1 py-1 px-4 bg-blue-600 hover:bg-blue-700'>
                     <div className='open-sans-medium'>Share</div>
                     <div><ShareIcon /></div>
                 </button>
                 {/* user profile  */}
                 <div title={user}><UserIcon /></div>
+
+                <Link to="/user/register" className="underline ms-2 text-sm font-medium text-gray-100">
+                    Register
+                </Link>
+                <Link to="/user/login" className="underline ms-2 text-sm font-medium text-gray-100">
+                    Login
+                </Link>
             </div>
         </div>
     )
