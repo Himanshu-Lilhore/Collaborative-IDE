@@ -1,4 +1,4 @@
-import LangSelect from './LangSelect'
+// import LangSelect from './LangSelect'
 import colors from '../util/colors'
 import { AnimatedTooltip } from './ui/animated-tooltip'
 import Logo from '@/assets/Logo'
@@ -7,8 +7,9 @@ import ChatIcon from '@/assets/ChatIcon'
 import VideoIcon from '@/assets/VideoIcon'
 import ShareIcon from '@/assets/ShareIcon'
 import UserIcon from '@/assets/UserIcon'
-import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { useEffect } from 'react'
 
 
 const users = [
@@ -18,9 +19,15 @@ const users = [
     { id: 4, name: 'gray', designation: '', image: '' },
 ]
 
-export default function InfoPanel({ user, language, setLanguage }: { user: string, language: any, setLanguage: any }) {
-    const navigate = useNavigate()
+export default function InfoPanel() {
+    const session = useSelector((state:any) => state.sessionStore)
+    const user = useSelector((state:any) => state.userStore)
 
+    useEffect(() => {
+        console.log(session)
+    }, [session])
+    
+    
     return (
         <div className={`flex flex-row p-2 justify-between items-center w-full ${colors.primary1}`}>
             <div className='flex flex-row gap-2 justify-between items-center px-2'>
@@ -28,7 +35,7 @@ export default function InfoPanel({ user, language, setLanguage }: { user: strin
                 <div><Logo /></div>
 
                 {/* proj name  */}
-                <div className='text-xl open-sans-medium'>Test project</div>
+                <div className='text-xl open-sans-medium'>{session.project.name}</div>
 
                 {/* <div>Saving...</div> */}
             </div>
@@ -55,7 +62,7 @@ export default function InfoPanel({ user, language, setLanguage }: { user: strin
                     <div><ShareIcon /></div>
                 </button>
                 {/* user profile  */}
-                <div title={user}><UserIcon /></div>
+                <div title={user.fname}><UserIcon /></div>
 
                 <Link to="/user/register" className="underline ms-2 text-sm font-medium text-gray-100">
                     Register

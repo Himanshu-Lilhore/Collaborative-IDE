@@ -8,8 +8,8 @@ const User = require('../models/userModel');
 exports.createProject = async (req, res) => {
     try {
         const { name, description, isPrivate } = req.body;
-        const savedProject = await Project.create({ name, description, isPrivate })
-        await User.findByIdAndUpdate(req.body._id, {projects: [...req.user.projects, savedProject._id]})
+        const savedProject = await Project.create({ name, description, isPrivate, fileTree: {name: 'root', id: 'root', children: []} })
+        await User.findByIdAndUpdate(req.user._id, {projects: [...req.user.projects, savedProject._id]})
         res.status(200).json(savedProject);
     } catch (error) {
         res.status(500).json({ error: error.message });

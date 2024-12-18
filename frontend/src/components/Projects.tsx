@@ -42,6 +42,7 @@ export default function Projects() {
                 responses.forEach((res: any) => {
                     projects.push(res.data)
                 })
+                console.log(projects)
                 dispatch(updateUserField({ field: 'projects', value: projects }))
             } catch (err) {
                 toast({

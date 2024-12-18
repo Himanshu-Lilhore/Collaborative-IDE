@@ -1,14 +1,15 @@
 import { Editor } from "@monaco-editor/react";
 import colors from '../util/colors'
+import { useSelector } from "react-redux";
 
 
-export default function CodeEditor({ handleEditorDidMount, trigger, language }: { handleEditorDidMount: any, trigger: any, language: any }) {
-
+export default function CodeEditor({ handleEditorDidMount }: { handleEditorDidMount: any }) {
+	const session = useSelector((state:any) => state.sessionStore)
 	return (
 		<div //className="pt-2"  
 		style={{backgroundColor: colors.ideBg}}>
 			<Editor
-				key={trigger}
+				key={session.trigger}
 				options={{
 					minimap: {
 						enabled: false,
@@ -16,7 +17,7 @@ export default function CodeEditor({ handleEditorDidMount, trigger, language }: 
 				}}
 				height="61.18vh"
 				theme="vs-dark"
-				language={language}
+				language={session.language}
 				onMount={handleEditorDidMount}
 			/>
 		</div>

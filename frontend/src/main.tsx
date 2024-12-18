@@ -8,13 +8,14 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import ReactDOM from "react-dom/client";
 import { Provider } from 'react-redux'
 import {store} from './app/store'
-import PlaceHolder from './components/PlaceHolder'
 import Projects from './components/Projects'
+import Playground from './components/Playground'
+import Session from './components/Session'
 
 const router = createBrowserRouter([
 	{
 		path: "/",
-		element: <PlaceHolder />,
+		element: <App />,
 		children: [
 			{
 				path: "/user/register",
@@ -46,11 +47,13 @@ const router = createBrowserRouter([
 			},
 			{
 				path: "/session",
-				element: <App />,
-			},
-			{
-				path: "/session/:sessionId",
-				element: <App />,
+				element: <Session />,
+				children: [
+					{
+						path: "/session/:sessionId",
+						element: <Playground />,
+					},
+				]
 			},
 		],
 	}

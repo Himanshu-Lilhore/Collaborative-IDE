@@ -12,18 +12,21 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet"
 import * as types from '../types/index'
-import RightArrow from "@/assets/RightArrow"
 import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux";
 import { updateProject } from "@/features/user/userSlice";
+import { setSession } from "@/features/session/sessionSlice"
 import { useToast } from "@/hooks/use-toast"
 import Axios from 'axios'
+import OpenArrow from "@/assets/OpenArrow"
+import { useNavigate } from "react-router-dom"
 
 export default function ProjectEdit({ project }: { project: types.Project }) {
     const [prevProj, setPrevProj] = useState<types.Project>(project)
     const dispatch = useDispatch()
     const { toast } = useToast()
-    const userId = useSelector((state: any) => state.userStore._id)
+    const userId:string = useSelector((state: any) => state.userStore._id)
+    const navigate = useNavigate()
 
     const handleSave = async () => {
         try {
@@ -44,8 +47,17 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
         }
     }
 
-    function handleEdit() {
 
+
+    function handleOpen() {
+        const sessionID = '1'
+        dispatch(setSession({
+            _id: sessionID,
+            participants: [userId],
+            project: project,
+            currFile: { name: 'root', id: 'root', children: null }
+        }))
+        navigate(`/session/${sessionID}`)
     }
 
     return (
@@ -85,7 +97,7 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
                     </div>
                     <SheetFooter>
                         <SheetClose asChild>
-                            <Button type="submit" onClick={handleEdit} className="bg-green-600 hover:bg-green-700 h-fit">Edit <RightArrow /></Button>
+                            <Button type="submit" onClick={handleOpen} className="bg-green-600 hover:bg-green-700">Open<OpenArrow /></Button>
                         </SheetClose>
                         <SheetClose asChild>
                             <Button type="submit" onClick={handleSave}>Save changes</Button>

@@ -28,3 +28,13 @@ export interface FileTreeNode {
     id: string,
     children: FileTreeNode[] | null
 }
+
+export interface SessionState {
+    _id: string;
+    participants: string[];
+    project: Project | null;
+    socketUser: string;
+    trigger: string;
+    language: string;
+    currFile: FileTreeNode;
+}
