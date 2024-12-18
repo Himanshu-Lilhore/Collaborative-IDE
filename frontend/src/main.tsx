@@ -9,6 +9,7 @@ import ReactDOM from "react-dom/client";
 import { Provider } from 'react-redux'
 import {store} from './app/store'
 import PlaceHolder from './components/PlaceHolder'
+import Projects from './components/Projects'
 
 const router = createBrowserRouter([
 	{
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
 			{
 				path: "/user/profile-update",
 				element: <Profile />,
+			},
+			{
+				path: "/user/projects",
+				element: <Projects />,
 			},
 			{
 				path: "/home",

@@ -11,17 +11,14 @@ import Explorer from './components/Explorer';
 import socket from './util/socket';
 import OpenedFiles from './components/OpenedFiles';
 import colors from './util/colors'
-
+import * as types from './types/index'
+// import { useSelector } from 'react-redux'
 Axios.defaults.withCredentials = true;
 
-interface FileTreeNode {
-    name: string,
-    id: string,
-    children: FileTreeNode[] | null
-}
 
 export default function App() {
-    const [user, setUser] = useState<string>('default')
+    // const userData = useSelector((state: any) => state.userStore)
+    const [socketUser, setSocketUser] = useState<string>('default')
     const editorRef = useRef<any>(null)
     let ydoc = useRef(new Y.Doc()).current;
     let docMap = useRef(ydoc.getMap('documents')).current;
@@ -39,8 +36,8 @@ export default function App() {
     const decorations = useRef<any>(null);
     const [trigger, setTrigger] = useState<any>(Date())
     const [language, setLanguage] = useState('html');
-    const [currFile, setCurrFile] = useState<FileTreeNode>({ name: 'root', id: 'root', children: null });
-
+    const [currFile, setCurrFile] = useState<types.FileTreeNode>({ name: 'root', id: 'root', children: null });
+    
 
     const loadDocument = (docId: string) => {
         let currentYtext = docMap.get(docId);
@@ -91,7 +88,7 @@ export default function App() {
                     // || (newState.startLine===newState.endLine && newState.startColumn===newState.endColumn)
                 ) {
                     // Update awareness with cursor/selection data
-                    let newCursor: any = { user: user, range: newState };
+                    let newCursor: any = { user: socketUser, range: newState };
 
                     const currentAwareness = provider.current.awareness.getLocalState();
                     // console.log('currentAwareness', currentAwareness); /////////////
@@ -152,8 +149,8 @@ export default function App() {
 
 
     useEffect(() => {
-        console.log(`user id set to : ${user}`);//////////////
-    }, [user])
+        console.log(`socket user id set to : ${socketUser}`);//////////////
+    }, [socketUser])
 
     useEffect(() => {
         console.log(`currFile set to : ${currFile.name}`);/////////////S
@@ -163,7 +160,7 @@ export default function App() {
 
     const initialStateHandler = (id: string, initialState: Uint8Array) => {
         console.log('Connected as:', id);
-        setUser(id);
+        setSocketUser(id);
 
         Y.applyUpdate(ydoc, new Uint8Array(initialState));
     };
@@ -208,7 +205,7 @@ export default function App() {
     return (
         <>
             <div className='relative text-white'>
-                <InfoPanel user={user} language={language} setLanguage={setLanguage} />
+                <InfoPanel user={socketUser} language={language} setLanguage={setLanguage} />
 
                 <div className='flex flex-row'>
                     <Explorer Y={Y} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} currFile={currFile} setCurrFile={setCurrFile} />

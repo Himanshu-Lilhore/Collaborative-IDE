@@ -21,6 +21,14 @@ const projectSchema = new mongoose.Schema({
     fileTree: {
         type: mongoose.Schema.Types.Mixed,    // tree of file structure stored in json format
         default: null
+    },
+    isPrivate: {
+        type: Boolean,
+        required: true
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
 }, {timestamps: true})
 

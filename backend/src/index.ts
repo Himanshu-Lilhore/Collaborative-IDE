@@ -12,6 +12,7 @@ const { generateFileTree } = require('../services/fileService')
 const { ptyProcess } = require('../server/terminal')
 const Project = require('../models/projectModel');
 const chokidar = require('chokidar');
+const cookieParser = require('cookie-parser')
 // const { LRUCache } = require('../services/LRUCache')
 const Y = require('yjs');
 
@@ -24,6 +25,7 @@ const io = socketIo(server, socketCorsOptions);
 connectDB();
 
 // Middlewares
+app.use(cookieParser())
 app.use(expressCors)
 app.use(express.json());
 

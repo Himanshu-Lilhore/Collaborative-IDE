@@ -13,6 +13,14 @@ async function getUniqueUsername() {
     return username
 }
 
+const excludeSensitive = (dataMap) => {
+    dataMap = dataMap.toObject()
+    const sensitive = ['__v', 'createdAt', 'updatedAt', 'password']
+    const filteredKeys = Object.keys(dataMap).filter(key => !sensitive.includes(key))
+    let cleanData = {}
+    filteredKeys.forEach(key => cleanData[key] = dataMap[key])
+    return (cleanData)
+}
 
 const login = async (req, res) => {
     try {
@@ -24,26 +32,14 @@ const login = async (req, res) => {
         if (!passwordMatches) {
             return res.status(401).send("wrong password or email address")
         }
-        const matchNames = await Promise.all(
-            userExists.matches.map(async (element) => {
-                const user = await User.findOne({ _id: element })
-                return user.username
-            })
-        )
+
         const expiresInMs = 3600000 * 1  // 1 hr = 3600000 ms
         if (userExists && passwordMatches) {
             const token = tokenize(userExists.username, userExists.email, expiresInMs)
             res.cookie('token', token, { httpOnly: true, maxAge: expiresInMs, sameSite: 'None', secure: true })
-            // console.log(`token : ${token}`)
+            console.log(`tokenized : ${token}`)
             console.log("\nUser logged in successfully.\n")
-            const profile = {
-                fname: userExists.fname,
-                lname: userExists.lname,
-                username: userExists.username,
-                email: userExists.email,
-                bio: userExists.bio,
-            }
-            return res.status(200).json(profile)
+            return res.status(200).json(excludeSensitive(userExists))
         } else {
             res.clearCookie('token', {
                 httpOnly: true,
@@ -82,7 +78,7 @@ const registerUser = async (req, res) => {
                 username: username
             })
             console.log("User created !!")
-            res.status(200).json("User created !")
+            res.status(200).json("User created..")
         }
         else {
             console.log("\nRejected user creation, input criteria not followed !\n")
@@ -97,35 +93,11 @@ const registerUser = async (req, res) => {
 // fetch a profile using ID or username (ONLY FOR LOGGEDIN USER)
 const viewProfile = async (req, res) => {
     try {
-        let query = ""
-
-        if (req.body._id) {
-            query = { _id: req.body._id };
-        } else if (req.body.username) {
-            query = { username: req.body.username };
-        }
-
-
-        if (!thisUser) {
+        if (!req.user) {
             return res.status(404).json({ error: 'User not found' })
         }
 
-        const matchNames = await Promise.all(
-            thisUser.matches.map(async (element) => {
-                const user = await User.findOne({ _id: element })
-                return user.username
-            })
-        )
-
-
-        const profile = {
-            fname: thisUser.fname,
-            lname: thisUser.lname,
-            username: thisUser.username,
-            email: thisUser.email,
-            bio: thisUser.bio,
-        }
-        res.status(200).json(profile)
+        return res.status(200).json(excludeSensitive(req.user))  // comes from auth middleware
     } catch (err) {
         console.log("\nFailed to fetch user details !\n")
         res.status(400).json({ error: err.message })

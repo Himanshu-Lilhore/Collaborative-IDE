@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as types from '../../types/index'
 
 const initialState: types.User = {
+    _id: '',
     fname: '',
     lname: '',
     email: '',
@@ -11,15 +12,14 @@ const initialState: types.User = {
     friends: [],
     projects: [],
     session: '',
-    isLoggedIn: false,
 };
 
 export const userSlice = createSlice({
     name: 'user',
     initialState,
     reducers: {
-        setUser: (state, action: PayloadAction<Omit<types.User, 'isLoggedIn'>>) => {
-            Object.assign(state, action.payload, { isLoggedIn: true });
+        setUser: (state, action: PayloadAction<types.User>) => {
+            Object.assign(state, action.payload);
         },
 
         clearUser: (state) => {
@@ -34,16 +34,12 @@ export const userSlice = createSlice({
             state[field] = value;
         },
 
-
-        addFriend: (state, action: PayloadAction<string>) => {
-            state.friends.push(action.payload);
-        },
-
-        addProject: (state, action: PayloadAction<string>) => {
-            state.projects.push(action.payload);
-        },
+        updateProject: (state,action: PayloadAction<types.Project>) => {
+            state.projects = state.projects.filter(proj => (typeof proj !== 'string' && proj._id !== action.payload._id))
+            state.projects.push(action.payload)
+        }
     },
 });
 
-export const { setUser, clearUser, updateUserField, addFriend, addProject } = userSlice.actions;
+export const { setUser, clearUser, updateUserField, updateProject } = userSlice.actions;
 export default userSlice.reducer;

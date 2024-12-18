@@ -3,8 +3,7 @@ import Axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PageHeading from '../PageHeading';
 import { useToast } from '@/hooks/use-toast';
-import { useDispatch } from 'react-redux';
-import { setUser } from '@/features/user/userSlice';
+Axios.defaults.withCredentials = true
 
 const Register = () => {
     const [firstName, setFirstName] = useState('');
@@ -14,7 +13,6 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
     const { toast } = useToast()
-    const dispatch = useDispatch()
 
     const navigate = useNavigate();
 
@@ -94,7 +92,6 @@ const Register = () => {
             }
 
             console.log('Registration successful', response.data);
-            dispatch(setUser({...response.data}))
             toast({
                 description: "Registration successful.",
 

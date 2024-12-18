@@ -1,45 +1,14 @@
-import { useEffect } from 'react'
 import Axios from 'axios'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import DataRow from './DataRow'
-import { useDispatch, useSelector } from 'react-redux'
-import { clearUser, setUser } from '@/features/user/userSlice'
+import { useSelector } from 'react-redux'
 import PageHeading from '../PageHeading'
-
 Axios.defaults.withCredentials = true
 
-
 export default function Profile() {
-    const userData = useSelector((state:any) => state.userStore)
+    const userData = useSelector((state: any) => state.userStore)
     const navigate = useNavigate()
-    const fieldsNotToDisplay = ['notifications', 'matches']
-    const dispatch = useDispatch()
-
-    useEffect(() => {
-        const handleFetch = async () => {
-            try {
-                const response = await Axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/user/profile`)
-
-                if (response.status === 200) {
-                    console.log('Profile fetched successfully:', response.data)
-                    dispatch(setUser({...response.data}))
-                } else if (response.status === 300) {
-                    console.log('Token is invalid or expired.')
-                } else {
-                    console.log('Fetch not working')
-                }
-            } catch (error) {
-                console.error('Fetching profile failed:', error)
-                dispatch(clearUser())
-                console.log('Redirecting to login page.')
-                navigate('/user/login')
-            }
-        }
-
-        handleFetch()
-    }, [])
-
-
+    const fieldsNotToDisplay = ['projects', 'session']
 
     function handleClick() {
         navigate('/user/profile-update')
@@ -47,7 +16,7 @@ export default function Profile() {
 
     return (
         <div className="flex items-center justify-center w-full">
-            
+            <Link to='/user/projects' className='border border-gray-300 bg-gray-500 p-2 rounded-md'>Projects</Link>
             <div className='flex flex-col my-5'>
 
                 <PageHeading>Profile</PageHeading>
@@ -61,7 +30,7 @@ export default function Profile() {
                         <div className="flex flex-col justify-between items-center py-5 w-full">
                             {Object.keys(userData).map((myKey, itr) => {
                                 if (!fieldsNotToDisplay.includes(myKey)) {
-                                        return <DataRow key={itr} dataType={myKey} dataVal={userData[myKey]} />
+                                    return <DataRow key={itr} dataType={myKey} dataVal={userData[myKey]} />
                                 }
                             })}
                         </div>

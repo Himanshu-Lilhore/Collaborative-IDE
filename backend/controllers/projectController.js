@@ -1,15 +1,16 @@
 const Project = require('../models/projectModel');
 const Y = require('yjs');
 const globalState = require('../utils/state');
-const { updateFile } = require('../services/fileService')
+const { updateFile } = require('../services/fileService');
+const User = require('../models/userModel');
 
 
 exports.createProject = async (req, res) => {
     try {
-        const { name, description, githubLink, liveLink, lastUpdatedBy, fileTree } = req.body;
-        const newProject = new Project({ name, description, githubLink, liveLink, lastUpdatedBy, fileTree });
-        const savedProject = await newProject.save();
-        res.status(201).json(savedProject);
+        const { name, description, isPrivate } = req.body;
+        const savedProject = await Project.create({ name, description, isPrivate })
+        await User.findByIdAndUpdate(req.body._id, {projects: [...req.user.projects, savedProject._id]})
+        res.status(200).json(savedProject);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -38,10 +39,11 @@ exports.getAllProjects = async (req, res) => {
 exports.updateProject = async (req, res) => {
     try {
         const updates = req.body;
+        console.log(updates._id.toString());
         const updatedProject = await Project.findByIdAndUpdate(
             req.body._id,
             { ...updates, lastUpdatedBy: req.body.lastUpdatedBy },
-            { new: true, runValidators: true }
+            { new: true }
         );
         if (!updatedProject) return res.status(404).json({ message: 'Project not found' });
         res.status(200).json(updatedProject);

@@ -3,16 +3,11 @@ import { useEffect, useState } from "react";
 import SaveIcon from "../assets/SaveIcon.tsx"
 import axios from 'axios';
 import colors from '../util/colors'
+import * as types from '../types/index.ts'
 
 
-interface FileTreeNode {
-    name: string,
-    id: string,
-    children: FileTreeNode[] | null
-}
-
-export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, currFile, setCurrFile }: { Y: any, loadDocument: any, ydoc: any, provider: any, editorRef: any, currFile: FileTreeNode, setCurrFile: any }) {
-    const [fileTree, setFileTree] = useState<FileTreeNode>({ name: 'root', id: 'root', children: null });
+export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, currFile, setCurrFile }: { Y: any, loadDocument: any, ydoc: any, provider: any, editorRef: any, currFile: types.FileTreeNode, setCurrFile: any }) {
+    const [fileTree, setFileTree] = useState<types.FileTreeNode>({ name: 'root', id: 'root', children: null });
 
 
     useEffect(() => {
@@ -56,19 +51,19 @@ export default function Explorer({ Y, loadDocument, ydoc, provider, editorRef, c
             </div>
             <div className="p-1">
                 {fileTree.children &&
-                    fileTree.children?.map((child: FileTreeNode) => <TreeNode Y={Y} node={child} key={child.id} loadDocument={loadDocument} ydoc={ydoc} currFile={currFile} setCurrFile={setCurrFile} provider={provider} editorRef={editorRef} />)}
+                    fileTree.children?.map((child: types.FileTreeNode) => <TreeNode Y={Y} node={child} key={child.id} loadDocument={loadDocument} ydoc={ydoc} currFile={currFile} setCurrFile={setCurrFile} provider={provider} editorRef={editorRef} />)}
             </div>
         </div>
     );
 }
 
 
-function TreeNode({ Y, node, loadDocument, ydoc, currFile, setCurrFile, provider, editorRef }: { Y: any, node: FileTreeNode, loadDocument: any, ydoc: any, currFile: FileTreeNode, setCurrFile: any, provider: any, editorRef: any }) {
+function TreeNode({ Y, node, loadDocument, ydoc, currFile, setCurrFile, provider, editorRef }: { Y: any, node: types.FileTreeNode, loadDocument: any, ydoc: any, currFile: types.FileTreeNode, setCurrFile: any, provider: any, editorRef: any }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toggleExpand = () => setIsExpanded(!isExpanded);
 
 
-    const openFile = (node: FileTreeNode) => {
+    const openFile = (node: types.FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
         socket.emit('filecachecheck', node.id, async (response: any) => {
             if (!response.fileWasInCache) {
