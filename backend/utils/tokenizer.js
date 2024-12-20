@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-function tokenize(username, email, timeInMs=3600000 * 1 ){
+function tokenize(username, email, timeInMs=3600000 * 1){
     const token = jwt.sign(
         {username, email}, 
         process.env.SECRET_KEY, 
@@ -10,4 +10,14 @@ function tokenize(username, email, timeInMs=3600000 * 1 ){
     return token
 }
 
-module.exports = tokenize;
+function tokenizeSession(sessionID, timeInMs=3600000 * 10){
+    const token = jwt.sign(
+        {sessionID}, 
+        process.env.SECRET_KEY_SESSIONS, 
+        {expiresIn: timeInMs}
+    )
+    console.log("New session token generated !")
+    return token
+}
+
+module.exports = {tokenize, tokenizeSession};

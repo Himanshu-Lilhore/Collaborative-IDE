@@ -38,11 +38,12 @@ const userSchema = new mongoose.Schema({
     }],
     projects: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'Project'
     }],
-    session: {
-        type: String,
-    }
+    sessions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Session'
+    }]
 }, {timestamps: true})
 
 const User = mongoose.model('User', userSchema)

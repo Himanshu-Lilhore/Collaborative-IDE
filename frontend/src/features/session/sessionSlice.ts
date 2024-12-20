@@ -33,7 +33,10 @@ export const sessionSlice = createSlice({
         },
         setCurrFile: (state, action: PayloadAction<types.FileTreeNode>) => {
             state.currFile = action.payload;
-        }
+        },
+        setProject: (state, action: PayloadAction<types.Project>) => {
+            state.project = action.payload;
+        },
     },
 });
 
@@ -43,7 +46,8 @@ export const {
     setSocketUser, 
     setTrigger, 
     setLanguage, 
-    setCurrFile 
+    setCurrFile,
+    setProject
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;

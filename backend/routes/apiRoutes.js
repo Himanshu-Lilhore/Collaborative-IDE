@@ -1,11 +1,10 @@
 const express = require('express');
-// const userRoutes = require('./userRoutes');
 // const authRoutes = require('./authRoutes');
 // const terminalRoutes = require('./terminalRoutes');
 const fileController = require('../controllers/fileController');
 const projectRoutes = require('./projectRoutes');
 const userRoutes = require('./userRoutes');
-
+const sessionRoutes = require('./sessionRoutes');
 const router = express.Router();
 
 // router.use('/auth', authRoutes);       // Routes under /api/auth
@@ -13,5 +12,6 @@ const router = express.Router();
 router.use('/file', fileController);
 router.use('/project', projectRoutes);
 router.use('/user', userRoutes);
+router.use('/session', sessionRoutes);
 
 module.exports = router;

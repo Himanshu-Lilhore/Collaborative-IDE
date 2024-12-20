@@ -50,7 +50,7 @@ const router = createBrowserRouter([
 				element: <Session />,
 				children: [
 					{
-						path: "/session/:sessionId",
+						path: "/session/:UrlSessionId",
 						element: <Playground />,
 					},
 				]

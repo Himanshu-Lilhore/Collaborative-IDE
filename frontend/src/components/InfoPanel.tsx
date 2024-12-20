@@ -9,7 +9,7 @@ import ShareIcon from '@/assets/ShareIcon'
 import UserIcon from '@/assets/UserIcon'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { useEffect } from 'react'
+import * as types from '../types/index'
 
 
 const users = [
@@ -20,13 +20,9 @@ const users = [
 ]
 
 export default function InfoPanel() {
-    const session = useSelector((state:any) => state.sessionStore)
-    const user = useSelector((state:any) => state.userStore)
+    const session:types.SessionState = useSelector((state:any) => state.sessionStore)
+    const user:types.User = useSelector((state:any) => state.userStore)
 
-    useEffect(() => {
-        console.log(session)
-    }, [session])
-    
     
     return (
         <div className={`flex flex-row p-2 justify-between items-center w-full ${colors.primary1}`}>
@@ -35,7 +31,7 @@ export default function InfoPanel() {
                 <div><Logo /></div>
 
                 {/* proj name  */}
-                <div className='text-xl open-sans-medium'>{session.project.name}</div>
+                <div className='text-xl open-sans-medium'>{session.project?.name}</div>
 
                 {/* <div>Saving...</div> */}
             </div>

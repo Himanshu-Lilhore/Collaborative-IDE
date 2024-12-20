@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
-const tokenize = require('../utils/tokenizer');
+const {tokenize} = require('../utils/tokenizer');
 const { generateUsername } = require("unique-username-generator");   // https://www.npmjs.com/package/unique-username-generator
 
 

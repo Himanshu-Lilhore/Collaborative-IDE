@@ -5,4 +5,9 @@ function detokenize(token){
     return decodedToken
 }
 
-module.exports = detokenize
+function detokenizeSession(token){
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY_SESSIONS)
+    return decodedToken
+}
+
+module.exports = {detokenize, detokenizeSession}

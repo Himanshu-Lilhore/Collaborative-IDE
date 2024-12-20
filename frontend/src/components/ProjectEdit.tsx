@@ -25,7 +25,7 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
     const [prevProj, setPrevProj] = useState<types.Project>(project)
     const dispatch = useDispatch()
     const { toast } = useToast()
-    const userId:string = useSelector((state: any) => state.userStore._id)
+    const userId: string = useSelector((state: any) => state.userStore._id)
     const navigate = useNavigate()
 
     const handleSave = async () => {
@@ -49,16 +49,61 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
 
 
 
-    function handleOpen() {
-        const sessionID = '1'
-        dispatch(setSession({
-            _id: sessionID,
-            participants: [userId],
-            project: project,
-            currFile: { name: 'root', id: 'root', children: null }
-        }))
-        navigate(`/session/${sessionID}`)
+    const handleOpen = async () => {
+        try {
+            const res = await Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/session/get`, {
+                projectId: project._id
+            })
+
+            if (res.status === 200) {
+                dispatch(setSession({
+                    _id: res.data._id,
+                    participants: [userId],
+                    project: project,
+                    currFile: { name: 'root', id: 'root', children: null }
+                }))
+                navigate(`/session/${res.data._id}`)
+                toast({
+                    description: "Joined existing session"
+                })
+            }
+        } catch (err: any) {
+            if (err.response?.status === 404) {
+                console.log("Session not found");
+                try {
+                    const res2 = await Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/session/create`, {
+                        project: project._id,
+                        admin: userId
+                    })
+                    if (res2.status === 200 && res2.data) {
+                        dispatch(setSession({
+                            _id: res2.data._id,
+                            participants: [userId],
+                            project: project,
+                            currFile: { name: 'root', id: 'root', children: null }
+                        }))
+                        navigate(`/session/${res2.data._id}`);
+                        toast({
+                            description: "Session created successfully"
+                        })
+                    }
+                } catch (err2) {
+                    console.log(err2)
+                    toast({
+                        description: 'There is some issue creating session for your project. Please try again.',
+                        variant: 'destructive'
+                    })
+                }
+            } else {
+                console.log(err)
+                toast({
+                    description: 'There is some issue fetching prev session of your project. Please try again.',
+                    variant: 'destructive'
+                })
+            }
+        }
     }
+
 
     return (
         <div>

@@ -11,7 +11,7 @@ const initialState: types.User = {
     githubUsername: '',
     friends: [],
     projects: [],
-    session: '',
+    sessions: [],
 };
 
 export const userSlice = createSlice({

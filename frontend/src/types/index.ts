@@ -8,7 +8,7 @@ export interface User {
     githubUsername?: string,
     friends: string[],
     projects: (string | Project)[],
-    session?: string,
+    sessions: string[],
 }
 
 export interface Project {

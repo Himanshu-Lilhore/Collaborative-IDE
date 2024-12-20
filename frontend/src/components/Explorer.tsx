@@ -10,12 +10,14 @@ import * as Y from 'yjs';
 
 
 export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { loadDocument: any, ydoc: any, provider: any, editorRef: any }) {
-    const fileTree = useSelector((state: any) => state.sessionStore.project.fileTree)
+    const fileTree:types.FileTreeNode = useSelector((state: any) => state.sessionStore.project.fileTree)
+    const currFile:Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
     const dispatch = useDispatch()
-    const session = useSelector((state: any) => state.sessionStore)
 
 
     useEffect(() => {
+        console.log("currfile : ", currFile)
+        console.log("filetree : ", fileTree)
         socket.on('file:refresh', (path: any) => {
             console.log('change in file tree : ', path)
         })
@@ -26,9 +28,6 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         })
     }, [])
 
-    useEffect(() => {
-        console.log(session)
-    }, [session])
 
     const saveProj = async () => {
         console.log('sending save project request ...')
@@ -57,8 +56,8 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
                 </button>
             </div>
             <div className="p-1">
-                {fileTree && fileTree.children.length > 0 &&
-                    fileTree.children.map((child: types.FileTreeNode) => <TreeNode node={child} key={child.id} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} />)}
+                {fileTree && fileTree.children && fileTree.children.length > 0 &&
+                    fileTree.children?.map((child: types.FileTreeNode) => <TreeNode node={child} key={child.id} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} />)}
             </div>
         </div>
     );

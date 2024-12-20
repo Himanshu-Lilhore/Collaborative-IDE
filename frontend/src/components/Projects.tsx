@@ -130,6 +130,7 @@ export default function Projects() {
                 </DialogContent>
             </Dialog>
 
+            {/* Edit projects  */}
             <div className="flex flex-row gap-2 flex-wrap">
                 {user.projects.map((project: types.Project | string) => {
                     if (typeof project === "object")
