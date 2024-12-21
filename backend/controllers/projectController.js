@@ -3,12 +3,13 @@ const Y = require('yjs');
 const globalState = require('../utils/state');
 const { updateFile } = require('../services/fileService');
 const User = require('../models/userModel');
+const { defaultFileTree } = require('../utils/constants')
 
 
 exports.createProject = async (req, res) => {
     try {
         const { name, description, isPrivate } = req.body;
-        const savedProject = await Project.create({ name, description, isPrivate, fileTree: {name: 'root', id: 'root', children: []} })
+        const savedProject = await Project.create({ name, description, isPrivate, fileTree: defaultFileTree })
         await User.findByIdAndUpdate(req.user._id, {projects: [...req.user.projects, savedProject._id]})
         res.status(200).json(savedProject);
     } catch (error) {

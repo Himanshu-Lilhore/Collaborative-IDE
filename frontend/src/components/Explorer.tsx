@@ -1,33 +1,33 @@
-import socket from "../util/socket";
+import socket from '@/util/socket';
 import { useEffect, useState } from "react";
 import SaveIcon from "../assets/SaveIcon.tsx"
 import axios from 'axios';
 import colors from '../util/colors'
 import * as types from '../types/index.ts'
 import { useDispatch, useSelector } from "react-redux";
-import { setFileTree, setCurrFile } from "@/features/session/sessionSlice.ts";
+import { setCurrFile, setSessionFileTree } from "@/features/session/sessionSlice.ts";
 import * as Y from 'yjs';
 
 
 export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { loadDocument: any, ydoc: any, provider: any, editorRef: any }) {
-    const fileTree:types.FileTreeNode = useSelector((state: any) => state.sessionStore.project.fileTree)
-    const currFile:Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
-    const dispatch = useDispatch()
+    const sessionFileTree: types.FileTreeNode = useSelector((state: any) => state.sessionStore.sessionFileTree)
+    const currFile: Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
+    const userId: string = useSelector((state: any) => state.userStore._id)
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        socket.emit('filetree')
+        socket.on('filetree', async (tree) => {
+            console.log("tree : ", tree);
+            dispatch(setSessionFileTree(tree))
+        })
+    }, [])
 
 
     useEffect(() => {
         console.log("currfile : ", currFile)
-        console.log("filetree : ", fileTree)
-        socket.on('file:refresh', (path: any) => {
-            console.log('change in file tree : ', path)
-        })
-
-        socket.on('filetree', (tree) => {
-            console.log("tree : ", tree);
-            dispatch(setFileTree(tree))
-        })
-    }, [])
-
+        console.log("filetree : ", sessionFileTree)
+    }, [currFile, sessionFileTree])
 
     const saveProj = async () => {
         console.log('sending save project request ...')
@@ -45,19 +45,64 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         }
     }
 
+
+    const createFolder = async () => {
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfolder`, {
+                // parentId: currFile.id,
+                // name: 'new-folder'
+            })
+
+            if (response.status === 200) {
+                console.log('Folder created successfully:', response.data);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const createFile = async () => {
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfile`, {
+                fileName: 'test.txt',
+                fileContent: '',
+                userId
+            })
+
+            if (response.status === 200) {
+                console.log('File created successfully:', response.data);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+
     return (
         <div className={`flex flex-col gap-1 w-60 h-fill ${colors.primary1} p-1 px-2 select-none`}>
             <div className="border border-black bg-blue-900/50 font-bold text-center">EXPLORER</div>
             <div className="flex flex-row gap-1 justify-end font-bold text-center">
-                <button className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+folder</button>
-                <button className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+file</button>
+                {/* create folder  */}
+                <button onClick={createFolder} className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+folder</button>
+                {/* create file  */}
+                <button onClick={createFile} className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+file</button>
+                {/* save  */}
                 <button onClick={() => saveProj()} className="flex-auto hover:scale-105 flex justify-center items-center">
                     <SaveIcon color={`#000`} />
                 </button>
             </div>
+
+            {/* file tree  */}
             <div className="p-1">
-                {fileTree && fileTree.children && fileTree.children.length > 0 &&
-                    fileTree.children?.map((child: types.FileTreeNode) => <TreeNode node={child} key={child.id} loadDocument={loadDocument} ydoc={ydoc} provider={provider} editorRef={editorRef} />)}
+                {sessionFileTree && sessionFileTree.children && sessionFileTree.children.length > 0 &&
+                    sessionFileTree.children?.map((child: types.FileTreeNode) =>
+                        <TreeNode node={child}
+                            key={child.id}
+                            loadDocument={loadDocument}
+                            ydoc={ydoc}
+                            provider={provider}
+                            editorRef={editorRef} />)
+                }
             </div>
         </div>
     );
@@ -74,7 +119,7 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
 
     const openFile = (node: types.FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
-        socket.emit('filecachecheck', node.id, async (response: any) => {
+        socket.emit('filecachecheck', node, async (response: any) => {
             if (!response.fileWasInCache) {
                 Y.applyUpdate(ydoc, new Uint8Array(response.newDoc));
                 console.log("File was NOT in cache")

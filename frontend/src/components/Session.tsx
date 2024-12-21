@@ -2,28 +2,14 @@ import { useEffect, useState } from 'react';
 import Axios from 'axios';
 import { Outlet, useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { setSession } from '@/features/session/sessionSlice';
+import { setSession, setProject } from '@/features/session/sessionSlice';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from './ui/switch';
-import { setProject } from '@/features/session/sessionSlice';
+
 Axios.defaults.withCredentials = true;
 
-/*
-socketUser/id state
-editorRef
-ydoc ref
-docMap ref
-unsavedDocsmap
-ytext state
-provider ref
-handleEditorDidMount ref
-decorations ref
-trigger state
-language state
-currFile state
-*/
 
 export default function Session() {
     const session = useSelector((state: any) => state.sessionStore);
@@ -36,6 +22,7 @@ export default function Session() {
     const [password, setPassword] = useState('');
     const { toast } = useToast()
     const navigate = useNavigate()
+
 
 
     useEffect(() => {
@@ -53,6 +40,7 @@ export default function Session() {
                             _id: res.data._id,
                             participants: [user._id],
                             project: res.data.project,
+                            sessionFileTree: res.data.sessionFileTree,
                             currFile: { name: 'root', id: 'root', children: null }
                         }))
                         setHasAccessToSession(true);
@@ -64,7 +52,7 @@ export default function Session() {
         }
 
         fetchSession();
-    }, [user])
+    }, [])
 
 
     useEffect(() => {
@@ -98,6 +86,7 @@ export default function Session() {
                     _id: res.data._id,
                     participants: [user._id],
                     project: res.data.project,
+                    sessionFileTree: res.data.sessionFileTree,
                     currFile: { name: 'root', id: 'root', children: null }
                 }))
                 setHasAccessToSession(true);
@@ -127,6 +116,7 @@ export default function Session() {
                     _id: res.data._id,
                     participants: [user._id],
                     project: res.data.project,
+                    sessionFileTree: res.data.sessionFileTree,
                     currFile: { name: 'root', id: 'root', children: null }
                 }))
                 navigate(`/session/${res.data._id}`);

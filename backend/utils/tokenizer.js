@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { tokenValidity, sessionTokenValidity } = require('../utils/constants')
 
-function tokenize(username, email, timeInMs=3600000 * 1){
+
+function tokenize(username, email, timeInMs = tokenValidity){
     const token = jwt.sign(
         {username, email}, 
         process.env.SECRET_KEY, 
@@ -10,7 +12,7 @@ function tokenize(username, email, timeInMs=3600000 * 1){
     return token
 }
 
-function tokenizeSession(sessionID, timeInMs=3600000 * 10){
+function tokenizeSession(sessionID, timeInMs = sessionTokenValidity){
     const token = jwt.sign(
         {sessionID}, 
         process.env.SECRET_KEY_SESSIONS, 

@@ -48,7 +48,6 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
     }
 
 
-
     const handleOpen = async () => {
         try {
             const res = await Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/session/get`, {
@@ -60,6 +59,7 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
                     _id: res.data._id,
                     participants: [userId],
                     project: project,
+                    sessionFileTree: res.data.sessionFileTree,
                     currFile: { name: 'root', id: 'root', children: null }
                 }))
                 navigate(`/session/${res.data._id}`)
@@ -80,6 +80,7 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
                             _id: res2.data._id,
                             participants: [userId],
                             project: project,
+                            sessionFileTree: res2.data.sessionFileTree,
                             currFile: { name: 'root', id: 'root', children: null }
                         }))
                         navigate(`/session/${res2.data._id}`);

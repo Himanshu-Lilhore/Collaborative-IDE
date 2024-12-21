@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import * as types from '../../types';
 
-
 const initialState: types.SessionState = {
     _id: '',
+    sessionFileTree: { name: 'root', id: 'root', children: [] },
     participants: [],
     project: null,
     socketUser: 'default',
@@ -17,10 +17,14 @@ export const sessionSlice = createSlice({
     initialState,
     reducers: {
         setSession: (state, action: PayloadAction<Partial<types.SessionState>>) => {
-            Object.assign(state, action.payload);
+            Object.assign(state, {
+                ...action.payload,
+                project: action.payload.project ? structuredClone(action.payload.project) : null,
+                sessionFileTree: action.payload.sessionFileTree ? structuredClone(action.payload.sessionFileTree) : null,
+            });
         },
-        setFileTree: (state, action: PayloadAction<any>) => {
-            if(state.project) state.project.fileTree = action.payload;
+        setSessionFileTree: (state, action: PayloadAction<any>) => {
+            state.sessionFileTree = structuredClone(action.payload);
         },
         setSocketUser: (state, action: PayloadAction<string>) => {
             state.socketUser = action.payload;
@@ -35,17 +39,17 @@ export const sessionSlice = createSlice({
             state.currFile = action.payload;
         },
         setProject: (state, action: PayloadAction<types.Project>) => {
-            state.project = action.payload;
+            state.project = structuredClone(action.payload);
         },
     },
 });
 
-export const { 
-    setSession, 
-    setFileTree, 
-    setSocketUser, 
-    setTrigger, 
-    setLanguage, 
+export const {
+    setSession,
+    setSessionFileTree,
+    setSocketUser,
+    setTrigger,
+    setLanguage,
     setCurrFile,
     setProject
 } = sessionSlice.actions;

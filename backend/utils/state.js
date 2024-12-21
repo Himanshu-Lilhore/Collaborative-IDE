@@ -1,9 +1,9 @@
 let clients = new Map();
-let currProject;
+let sessionFileTree;
 let yjsCache;
 
 const globalState = {
-    currProject,
+    sessionFileTree,
     clients,
     yjsCache
 };

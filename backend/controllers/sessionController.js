@@ -2,7 +2,7 @@ const Session = require('../models/sessionModel');
 const User = require('../models/userModel');
 const Project = require('../models/projectModel');
 const { tokenizeSession } = require('../utils/tokenizer');
-const expiresInMs = 3600000 * 10  // 1 hr = 3600000 ms
+const { defaultFileTree, sessionTokenValidity } = require('../utils/constants')
 
 const excludeSensitive = (dataMap) => {
     dataMap = dataMap.toObject()
@@ -19,21 +19,25 @@ exports.createSession = async (req, res) => {
         if (req.user) sessionConfig.admin = req.user._id
         else sessionConfig.admin = null
         let newProj = null
-        if (req.body.project) sessionConfig.project = req.body.project
+        if (req.body.project) {
+            sessionConfig.project = req.body.project
+            sessionConfig.sessionFileTree = structuredClone((await Project.findById(req.body.project)).fileTree)
+        }
         else {
             newProj = await Project.create({
                 name: 'Auto generated project',
-                fileTree: { name: 'root', id: 'root', children: [] },
+                fileTree: defaultFileTree,
                 isPrivate: false
             })
             sessionConfig.project = newProj._id
+            sessionConfig.sessionFileTree = defaultFileTree
         }
         const newSession = await Session.create({
             ...sessionConfig,
-            ...req.body
+            ...req.body,
         })
-        const sessionToken = tokenizeSession(newSession._id, expiresInMs)
-        res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: expiresInMs, sameSite: 'None', secure: true })
+        const sessionToken = tokenizeSession(newSession._id)
+        res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: sessionTokenValidity, sameSite: 'None', secure: true })
         await User.findByIdAndUpdate(req.user._id, { sessions: [...req.user.sessions, newSession._id] })
         console.log('Session created : ', newSession._id)
         res.status(200).json(excludeSensitive(newSession));
@@ -51,13 +55,13 @@ exports.createSession = async (req, res) => {
 exports.getSession = async (req, res) => {
     try {
         let session = null
-        if(req.body.projectId) session = await Session.findOne({project : req.body.projectId})
+        if (req.body.projectId) session = await Session.findOne({ project: req.body.projectId })
         else session = await Session.findById(req.body.sessionId)
 
         if (!session) return res.status(404).json({ message: 'Session not found' });
         else {
-            const sessionToken = tokenizeSession(session._id, expiresInMs)
-            res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: expiresInMs, sameSite: 'None', secure: true })
+            const sessionToken = tokenizeSession(session._id)
+            res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: sessionTokenValidity, sameSite: 'None', secure: true })
             console.log('Session fetched : ', session._id)
             res.status(200).json(excludeSensitive(session));
         }
@@ -73,8 +77,8 @@ exports.joinSession = async (req, res) => {
         if (!session) return res.status(404).json({ message: 'Session not found' });
         else {
             console.log(`${req.user._id} joined session ${session._id}`)
-            const sessionToken = tokenizeSession(session._id, expiresInMs)
-            res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: expiresInMs, sameSite: 'None', secure: true })
+            const sessionToken = tokenizeSession(session._id)
+            res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: sessionTokenValidity, sameSite: 'None', secure: true })
             res.status(200).json(excludeSensitive(session));
         }
     } catch (err) {

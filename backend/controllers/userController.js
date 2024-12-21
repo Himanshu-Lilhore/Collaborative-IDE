@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
 const {tokenize} = require('../utils/tokenizer');
 const { generateUsername } = require("unique-username-generator");   // https://www.npmjs.com/package/unique-username-generator
+const { tokenValidity } = require('../utils/constants')
 
 
 async function getUniqueUsername() {
@@ -33,10 +34,9 @@ const login = async (req, res) => {
             return res.status(401).send("wrong password or email address")
         }
 
-        const expiresInMs = 3600000 * 1  // 1 hr = 3600000 ms
         if (userExists && passwordMatches) {
-            const token = tokenize(userExists.username, userExists.email, expiresInMs)
-            res.cookie('token', token, { httpOnly: true, maxAge: expiresInMs, sameSite: 'None', secure: true })
+            const token = tokenize(userExists.username, userExists.email)
+            res.cookie('token', token, { httpOnly: true, maxAge: tokenValidity, sameSite: 'None', secure: true })
             console.log(`tokenized : ${token}`)
             console.log("\nUser logged in successfully.\n")
             return res.status(200).json(excludeSensitive(userExists))
@@ -137,7 +137,7 @@ const editUserProfile = async (req, res) => {
             sameSite: 'None'
         })
         const token = tokenize(username, email)
-        res.cookie('token', token, { httpOnly: true, maxAge: 3600000 * 1, sameSite: 'None', secure: true })
+        res.cookie('token', token, { httpOnly: true, maxAge: tokenValidity, sameSite: 'None', secure: true })
 
         return res.status(200).json({ message: 'Profile updated successfully' });
     } catch (e) {

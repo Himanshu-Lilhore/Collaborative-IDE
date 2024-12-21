@@ -34,7 +34,7 @@ export default function Playground() {
             { autoConnect: true }
         )
     );
-    
+
 
     const loadDocument = (docId: string) => {
         let currentYtext= docMap.get(docId);

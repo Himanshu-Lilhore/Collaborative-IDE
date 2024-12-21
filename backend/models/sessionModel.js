@@ -18,6 +18,10 @@ const sessionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    sessionFileTree: {
+        type: Object,
+        required: true
     }
 }, {timestamps: true})
 

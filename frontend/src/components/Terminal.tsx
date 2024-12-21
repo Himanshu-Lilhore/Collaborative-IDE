@@ -13,6 +13,9 @@ export default function Terminal() {
 
     useEffect(() => {
         term.open(terminalRef.current);
+
+        socket.emit('terminalinit');
+
         term.onData((data: any) => {
             socket.emit('terminal', data);
         });

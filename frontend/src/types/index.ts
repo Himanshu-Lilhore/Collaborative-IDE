@@ -26,7 +26,7 @@ export interface Project {
 export interface FileTreeNode {
     name: string,
     id: string,
-    children: FileTreeNode[] | null
+    children: FileTreeNode[] | null,
 }
 
 export interface SessionState {
@@ -36,5 +36,6 @@ export interface SessionState {
     socketUser: string;
     trigger: string;
     language: string;
+    sessionFileTree: Object;
     currFile: FileTreeNode;
 }

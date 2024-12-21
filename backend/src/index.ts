@@ -5,17 +5,15 @@ const socketIo = require('socket.io');
 const connectDB = require('../config/mongodb');
 const apiRoutes = require('../routes/apiRoutes');
 const setupSocket = require('../controllers/socketController');
-const { expressCors } = require('../middlewares/corsConfig');
-const { socketCorsOptions } = require('../middlewares/corsConfig');
+const { expressCors, socketCorsOptions } = require('../middlewares/corsConfig');
 const globalState = require('../utils/state');
 const { generateFileTree } = require('../services/fileService')
 const { ptyProcess } = require('../server/terminal')
 const Project = require('../models/projectModel');
 const chokidar = require('chokidar');
 const cookieParser = require('cookie-parser')
-// const { LRUCache } = require('../services/LRUCache')
 const Y = require('yjs');
-
+// const { LRUCache } = require('../services/LRUCache')
 
 const app = express();
 const server = http.createServer(app);
@@ -35,15 +33,15 @@ setupSocket(io);
 // init
 (async () => {
     try {
-        // globalState.yjsCache = new LRUCache(10);
-        globalState.currProject = await Project.findById('674e34865df7c7f91602ea41');
-        console.log('Project loaded:', globalState.currProject.fileTree);
+        globalState.sessionFileTree = await generateFileTree()
+        console.log('Project loaded:', globalState.sessionFileTree);
     } catch (error) {
         console.error('Error initializing file tree:', error);
     }
 })();
-chokidar.watch('./user').on('all', (event:any, path:any) => {
-    io.emit('file:refresh', path)
+chokidar.watch('./user').on('all', async (event:any, path:any) => {
+    globalState.sessionFileTree = await generateFileTree()
+    io.emit('filetree', globalState.sessionFileTree)
 });
 
 // Routes
