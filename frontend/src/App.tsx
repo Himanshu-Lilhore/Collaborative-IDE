@@ -38,9 +38,9 @@ export default function PlaceHolder() {
         }, [])
 
     return (
-        <>
+        <div className='dark'>
             <Outlet />
             <Toaster />
-        </>
+        </div>
     )
 }

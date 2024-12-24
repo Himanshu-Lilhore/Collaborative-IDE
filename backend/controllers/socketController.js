@@ -38,7 +38,7 @@ const setupSocket = (io) => {
             if (!file) {
                 // file = await getFile(fileId); // Loading file from DB
                 data = await readFileLocally(node)
-                console.log(`Loading file ${node.id} from local to YJS : ${data}`);
+                // console.log(`Loading file ${node.id} from local to YJS : ${data}`);
                 let docMap = ydoc.getMap('documents')
                 let ytext = new Y.Text();
                 ytext.insert(0, data)

@@ -10,12 +10,10 @@ const buildTree = async (currentDir, currentTree) => {
     const items = await fsp.readdir(currentDir);
     for (const item of items) {
         let itemPath = path.join(currentDir, item);
-        
-        console.log(itemPath)
+
         let name, id
         let isDirectory
-        
-        console.log(1)
+
         try {
             const stat1 = await fsp.stat(itemPath);
             isDirectory = stat1.isDirectory();
@@ -23,55 +21,43 @@ const buildTree = async (currentDir, currentTree) => {
             console.warn(`File or directory not found: ${itemPath}. Skipping. Error: ${error.message}`);
             continue;
         }
-        console.log(2)
-        if (isDirectory) {
-            name = item
-            id = uuidv4();
-        } else {
-            name = item.includes(constants.idSeparator) ? item : `${item}${constants.idSeparator}${uuidv4()}`;
-            id = name.split(constants.idSeparator)[1];
-        }
-        
-        // Rename the item locally if necessary
-        if (item !== name) {
-            // const newPath = path.join(currentDir, name);
-            // await fsp.rename(itemPath, newPath); // renaming
-            if (isDirectory) {
-                console.log(3)
-                // const oldFolderPath = path.join(currentDir, item);
-                // const newFolderPath = path.join(currentDir, name);
-                // fs.renameSync(oldFolderPath, newFolderPath);
-                // itemPath = path.join(currentDir, name)
-            } else {
-                // console.log(4)
-                // const content = await fs.readFileSync(itemPath, 'utf-8');
-                // console.log(5)
-                // await fs.unlinkSync(itemPath);
-                // console.log(6)
-                // itemPath = path.join(currentDir, name)
-                // console.log(7)
-                // await fs.writeFileSync(itemPath, content, 'utf-8');
-                // console.log(8)
-                const oldPath = path.join(currentDir, item);
-                const newPath = path.join(currentDir, name);
-                fs.renameSync(oldPath, newPath);
-            }
-        }
-        const tempObj = { name, id };
-        console.log(9)
+        name = item
+        id = uuidv4();
+
+        // if (isDirectory) {
+        //     name = item
+        //     id = uuidv4();
+        // } else {
+        //     name = item; //item.includes(constants.idSeparator) ? item : `${item}${constants.idSeparator}${uuidv4()}${constants.idSeparator}`;
+        //     id = uuidv4();
+        // }
+        // // Rename the item locally if necessary
+        // if (item !== name) {
+        //     // const newPath = path.join(currentDir, name);
+        //     // await fsp.rename(itemPath, newPath); // renaming
+        //     if (isDirectory) {
+        //         // const oldFolderPath = path.join(currentDir, item);
+        //         // const newFolderPath = path.join(currentDir, name);
+        //         // fs.renameSync(oldFolderPath, newFolderPath);
+        //         // itemPath = path.join(currentDir, name)
+        //     } else {
+        //         const oldPath = path.join(currentDir, item);
+        //         const newPath = path.join(currentDir, name);
+        //         fs.renameSync(oldPath, newPath);
+        //     }
+        // }
+        // itemPath = path.join(currentDir, name)
         // const stat = await fsp.stat(itemPath);
-        
+
+        const tempObj = { name, id };
+
         if (isDirectory) {
             tempObj.children = [];
-            console.log(10)
             await buildTree(itemPath, tempObj.children);
-            console.log(11)
         } else {
             tempObj.children = null;
         }
-        console.log(12)
         currentTree.push(tempObj);
-        console.log(13)
     }
 };
 

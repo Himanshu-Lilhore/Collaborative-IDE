@@ -8,11 +8,8 @@ const setupSocket = require('../controllers/socketController');
 const { expressCors, socketCorsOptions } = require('../middlewares/corsConfig');
 const globalState = require('../utils/state');
 const { generateFileTree } = require('../services/fileService')
-const { ptyProcess } = require('../server/terminal')
-const Project = require('../models/projectModel');
-const chokidar = require('chokidar');
 const cookieParser = require('cookie-parser')
-const Y = require('yjs');
+const {initializeChokidar, emitter} = require('../services/sessionTree')
 // const { LRUCache } = require('../services/LRUCache')
 
 const app = express();
@@ -39,10 +36,10 @@ setupSocket(io);
         console.error('Error initializing file tree:', error);
     }
 })();
-chokidar.watch('./user').on('all', async (event:any, path:any) => {
-    globalState.sessionFileTree = await generateFileTree()
-    io.emit('filetree', globalState.sessionFileTree)
-});
+
+// file tree
+initializeChokidar('./user');
+emitter(io);
 
 // Routes
 app.use('/api', apiRoutes);

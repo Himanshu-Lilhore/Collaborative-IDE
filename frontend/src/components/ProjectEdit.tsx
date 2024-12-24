@@ -110,7 +110,7 @@ export default function ProjectEdit({ project }: { project: types.Project }) {
         <div>
             <Sheet>
                 <SheetTrigger asChild>
-                    <div className="flex flex-col gap-2 rounded-lg text-wrap border border-black bg-gray-200 p-4 hover:scale-105 hover:shadow-2xl hover:bg-gray-300 shadow-black transition-all duration-300 cursor-pointer">
+                    <div className="flex flex-col gap-2 rounded-lg text-wrap border border-gray-500 bg-gray-800 p-4 hover:scale-105 hover:shadow-xl hover:shadow-white transition-all duration-300 cursor-pointer">
                         <div>{project.name}</div>
                         <div>{project.description}</div>
                         <div>{project.isPrivate}</div>

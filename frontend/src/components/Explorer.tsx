@@ -11,23 +11,24 @@ import * as Y from 'yjs';
 
 export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { loadDocument: any, ydoc: any, provider: any, editorRef: any }) {
     const sessionFileTree: types.FileTreeNode = useSelector((state: any) => state.sessionStore.sessionFileTree)
-    const currFile: Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
+    // const currFile: Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
     const userId: string = useSelector((state: any) => state.userStore._id)
     const dispatch = useDispatch();
+    const [input, setInput] = useState('')
 
     useEffect(() => {
         socket.emit('filetree')
-        socket.on('filetree', async (tree) => {
+        socket.on('filetree', (tree) => {
             console.log("tree : ", tree);
             dispatch(setSessionFileTree(tree))
         })
     }, [])
 
 
-    useEffect(() => {
-        console.log("currfile : ", currFile)
-        console.log("filetree : ", sessionFileTree)
-    }, [currFile, sessionFileTree])
+    // useEffect(() => {
+    //     console.log("currfile : ", currFile)
+    //     console.log("filetree : ", sessionFileTree)
+    // }, [currFile, sessionFileTree])
 
     const saveProj = async () => {
         console.log('sending save project request ...')
@@ -50,7 +51,7 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         try {
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfolder`, {
                 // parentId: currFile.id,
-                // name: 'new-folder'
+                name: input || 'testFolder'
             })
 
             if (response.status === 200) {
@@ -59,12 +60,13 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         } catch (err) {
             console.log(err);
         }
+        setInput('')
     }
 
     const createFile = async () => {
         try {
             const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfile`, {
-                fileName: 'test.txt',
+                fileName: input || 'test.txt',
                 fileContent: '',
                 userId
             })
@@ -75,6 +77,7 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         } catch (err) {
             console.log(err);
         }
+        setInput('')
     }
 
 
@@ -90,6 +93,10 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
                 <button onClick={() => saveProj()} className="flex-auto hover:scale-105 flex justify-center items-center">
                     <SaveIcon color={`#000`} />
                 </button>
+            </div>
+
+            <div>
+                <input className="text-black" value={input} onChange={(e) => setInput(e.target.value)} />
             </div>
 
             {/* file tree  */}
