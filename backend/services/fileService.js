@@ -4,7 +4,10 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const baseDir = path.join(__dirname, '../user');
 const globalState = require('../utils/state');
-const constants = require('../utils/constants');
+const { readFile } = require('../controllers/explorerController');
+const Session = require('../models/sessionModel');
+const chokidar = require('chokidar');
+const { ptyProcess } = require('../server/terminal');
 
 const buildTree = async (currentDir, currentTree) => {
     const items = await fsp.readdir(currentDir);
@@ -63,28 +66,27 @@ const buildTree = async (currentDir, currentTree) => {
 
 const generateFileTree = async () => {
     directory = path.join(__dirname, '../user');
-    const tree = { name: 'root', id: 'root', children: [] };
-    await buildTree(directory, tree.children);
+    const tree = [];
+    await buildTree(directory, tree);
     return tree;
 };
 
 
 function getPathById(tree, targetId, path) {
-    if (!tree) return null;
+    if (!tree || tree.length === 0) return null;
 
-    if (tree.id === targetId) {
-        return `${path}/${tree.name}`.substring(5);  // romoved the /root part with substring
-    }
-
-    if (tree.children && tree.children.length > 0) {
-        for (let child of tree.children) {
-            const result = getPathById(child, targetId, `${path}/${tree.name}`);
-            if (result) {
-                return result;
+    if (tree && tree.length > 0) {
+        for (let child of tree) {
+            if (child.id.toString() === targetId) {
+                return `${path}/${child.name}`
+            } else {
+                const result = getPathById(child.children, targetId, `${path}/${tree.name}`);
+                if (result) {
+                    return result;
+                }
             }
         }
     }
-
     return null;
 }
 
@@ -94,6 +96,105 @@ const ensureDirectoryExists = (dirPath) => {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 };
+
+
+const fetchFilesLocally = async (tree, basePath) => {
+    try {
+        for (const node of tree) {
+            const filePath = path.join(basePath, node.name);
+
+            if (node.children && node.children.length > 0) {
+                // If it has children, it's a directory, so we create it locally
+                if (!fs.existsSync(filePath)) {
+                    const fullPath = path.join(baseDir.split(path.sep).slice(0, -1).join(path.sep), filePath)
+                    fs.mkdirSync(fullPath, { recursive: true });
+                }
+                // Recursively fetch files for subdirectories
+                await fetchFilesLocally(node.children, filePath);
+            } else {
+                // If it's a file, fetch it from DB and save it locally
+                const file = await readFile(node);
+                saveFileLocally(file, filePath);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching files locally:', error.message);
+    }
+};
+
+
+// const clearAndRecreateDirectory = () => {
+//     const baseDir = 'C:\\Users\\user\\deletiontesttttt\\real'///////////
+//     // const watchPath = baseDir/////////////
+//     // chokidar.watch(watchPath, { ignoreInitial: true })
+//     //     .on('add', filePath => {
+//     //         console.log(filePath)///////////////
+//     //     })
+//     chokidar.unwatch(baseDir);
+
+
+//     console.log('Clearing and recreating directory:', baseDir);
+
+//     try {
+//         if (fs.existsSync(baseDir)) {
+//             // Remove the directory and its contents
+//             fs.rmSync(baseDir, { recursive: true, force: true });
+//         }
+//         // Recreate the directory
+//         fs.mkdirSync(baseDir, { recursive: true });
+//     } catch (error) {
+//         console.error('Error clearing and recreating directory:', error.message);
+//         throw error; // Rethrow to handle it in fetchFilesLocally
+//     }
+// };
+
+const clearAndRecreateDirectory = async () => {
+    const baseDir = 'C:\\aaUserFiles\\edu\\Projects\\Collaborative-IDE\\backend\\user'///////////
+    console.log('Clearing and recreating directory:', baseDir);
+    ptyProcess.write('cd ..\r');
+
+    try {
+        // Stop watchers or processes accessing baseDir if necessary
+        if (globalState.watcher) await globalState.watcher.close()
+
+        if (fs.existsSync(baseDir)) {
+            // Retry mechanism for deletion
+            fs.rmSync(baseDir, { recursive: true, force: true });
+        }
+        // Recreate the directory
+        fs.mkdirSync(baseDir, { recursive: true });
+    } catch (error) {
+        console.error('Error clearing and recreating directory:', error.message);
+        throw error;
+    }
+
+    ptyProcess.write(`cd ${baseDir}\r`);
+};
+
+
+// Function to save file locally after fetching it from DB
+const saveFileLocally = (file, filePath) => {
+    try {
+        ensureDirectoryExists(baseDir);
+        const fullPath = path.join(baseDir.split(path.sep).slice(0, -1).join(path.sep), filePath)
+        fs.writeFileSync(fullPath, file.data, 'utf-8');
+        console.log(`File saved locally: ${fullPath}`);
+    } catch (error) {
+        console.error('Error saving file locally:', error.message);
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 const createFileLocally = (fileName, content) => {
     try {
@@ -123,6 +224,10 @@ const createFolderLocally = (folderName) => {
 const readFileLocally = async (node) => {
     try {
         const temp = getPathById(globalState.sessionFileTree, node.id, '');
+        if (temp === null) {
+            console.log('File not found in local tree (readFileLocally)')
+            return 'File not found (readFileLocally)';
+        }
         const filePath = path.join(baseDir, temp);
         const content = fs.readFileSync(filePath, 'utf-8');
         console.log(`File read from: ${filePath}`);
@@ -197,6 +302,7 @@ const renameFolderLocally = (oldFolderName, newFolderName) => {
 
 
 module.exports = {
+    fetchFilesLocally,
     generateFileTree,
     createFileLocally,
     createFolderLocally,
@@ -204,6 +310,7 @@ module.exports = {
     deleteFileLocally,
     deleteFolderLocally,
     updateFileLocally,
-    renameFolderLocally
+    renameFolderLocally,
+    clearAndRecreateDirectory
 };
 

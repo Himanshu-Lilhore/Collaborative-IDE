@@ -1,3 +1,6 @@
+// import socket from '../util/socket';
+import getSocket from '../util/socket';
+const socket = getSocket();
 import { useEffect, useRef, useState } from 'react';
 import Axios from 'axios';
 import * as Y from 'yjs';
@@ -7,7 +10,6 @@ import CodeEditor from '../components/CodeEditor';
 import Terminal from '../components/Terminal';
 import InfoPanel from '../components/InfoPanel'
 import Explorer from '../components/Explorer';
-import socket from '../util/socket';
 import OpenedFiles from '../components/OpenedFiles';
 import colors from '../util/colors'
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,10 +22,10 @@ export default function Playground() {
     const socketUser = useSelector((state:any) => state.sessionStore.socketUser)
     const currFile = useSelector((state:any) => state.sessionStore.currFile)
     let ydoc = useRef(new Y.Doc()).current;
-    const [ytext, setYtext] = useState<Y.Text | any>(ydoc.getText('default'));
+    const [ytext, setYtext] = useState<Y.Text>(ydoc.getText('default'));
     const editorRef = useRef<any>(null)
-    let docMap = useRef(ydoc.getMap('documents')).current;
-    const unsavedDocsMap = useRef<Y.Map<string>>(ydoc.getMap('unsavedDocs')).current;
+    let docMap = useRef<Y.Map<Y.Text>>(ydoc.getMap('documents')).current;
+    // const unsavedDocsMap = useRef<Y.Map<string>>(ydoc.getMap('unsavedDocs')).current;
     const handleEditorDidMount = useRef<any>();
     const decorations = useRef<any>(null);
     const provider = useRef(
@@ -37,7 +39,7 @@ export default function Playground() {
 
 
     const loadDocument = (docId: string) => {
-        let currentYtext= docMap.get(docId);
+        let currentYtext= docMap.get(docId) as Y.Text;
         if (!currentYtext) {
             console.log("Doc didn't exist")
             // If the document doesn't exist, create a new Y.Text and store it in the Y.Map
@@ -52,6 +54,12 @@ export default function Playground() {
 
     useEffect(() => {
         loadDocument('default'); // Replace 'default' with the desired document ID
+        ydoc.on('update', (_upt, origin) => {
+            if (origin !== provider) {
+                const update = Y.encodeStateAsUpdate(ydoc);
+                socket.emit('update', update);
+            }
+        });
     }, []);
 
 
@@ -155,48 +163,43 @@ export default function Playground() {
 
 
 
-    const initialStateHandler = (id: string, initialState: Uint8Array) => {
-        console.log('Connected as:', id);
-        dispatch(setSocketUser(id));
-
-        Y.applyUpdate(ydoc, new Uint8Array(initialState));
-    };
+    const initialStateHandler = (data: { id: string; initialState: Uint8Array }) => {
+        console.log('Connected as:', data.id);/////////////
+        dispatch(setSocketUser(data.id));
+    
+        Y.applyUpdate(ydoc, new Uint8Array(data.initialState));
+        docMap = ydoc.getMap('documents')
+    };    
 
 
     useEffect(() => {
         socket.on('initialState', initialStateHandler);
+        socket.emit('initialState');
 
-        ydoc.on('update', (_upt, origin) => {
-            if (origin !== provider) {
-                const update = Y.encodeStateAsUpdate(ydoc);
-                socket.emit('update', update);
-            }
-        });
+        // ytext.observe((_event: any) => {
+        //     if (!unsavedDocsMap.has(currFile.id)) {
+        //         unsavedDocsMap.set(currFile.id, new Date().getTime().toString())
+        //         console.log(`${currFile.name} added to unsaved docs`);
+        //     }
 
-        ytext.observe((_event: any) => {
-            if (!unsavedDocsMap.has(currFile.id)) {
-                unsavedDocsMap.set(currFile.id, new Date().getTime().toString())
-                console.log(`${currFile.name} added to unsaved docs`);
-            }
-
-            // You can inspect the changes in the event
-            // event.delta.forEach((change:any) => {
-            //     if (change.insert) {
-            //         console.log('Inserted text:', change.insert);
-            //     }
-            //     if (change.delete) {
-            //         console.log('Deleted characters:', change.delete);
-            //     }
-            //     if (change.retain) {
-            //         console.log('Retained characters:', change.retain);
-            //     }
-            // });
-        });
+        //     // You can inspect the changes in the event
+        //     // event.delta.forEach((change:any) => {
+        //     //     if (change.insert) {
+        //     //         console.log('Inserted text:', change.insert);
+        //     //     }
+        //     //     if (change.delete) {
+        //     //         console.log('Deleted characters:', change.delete);
+        //     //     }
+        //     //     if (change.retain) {
+        //     //         console.log('Retained characters:', change.retain);
+        //     //     }
+        //     // });
+        // });
 
         return () => {
             socket.off('initialState', initialStateHandler);
         };
-    }, [ydoc, ytext]);
+    }, [ytext]);
 
 
     return (

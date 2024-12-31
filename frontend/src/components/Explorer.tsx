@@ -1,4 +1,6 @@
-import socket from '@/util/socket';
+// import socket from '@/util/socket';
+import getSocket from '@/util/socket';
+const socket = getSocket();
 import { useEffect, useState } from "react";
 import SaveIcon from "../assets/SaveIcon.tsx"
 import axios from 'axios';
@@ -10,20 +12,18 @@ import * as Y from 'yjs';
 
 
 export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { loadDocument: any, ydoc: any, provider: any, editorRef: any }) {
-    const sessionFileTree: types.FileTreeNode = useSelector((state: any) => state.sessionStore.sessionFileTree)
-    // const currFile: Partial<types.SessionState> = useSelector((state: any) => state.sessionStore.currFile)
+    const sessionFileTree: types.FileTreeNode[] = useSelector((state: any) => state.sessionStore.sessionFileTree)
     const userId: string = useSelector((state: any) => state.userStore._id)
     const dispatch = useDispatch();
     const [input, setInput] = useState('')
 
     useEffect(() => {
         socket.emit('filetree')
-        socket.on('filetree', (tree) => {
+        socket.on('filetree', (tree:any) => {
             console.log("tree : ", tree);
             dispatch(setSessionFileTree(tree))
         })
     }, [])
-
 
     // useEffect(() => {
     //     console.log("currfile : ", currFile)
@@ -46,40 +46,21 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
         }
     }
 
+    const createFile = async () => {
+        const fileName = input || 'test.txt'
+        
+        socket.emit('addFile', { filePath: `/user/${fileName}`, userId: userId });
+
+        setInput('')
+    }
 
     const createFolder = async () => {
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfolder`, {
-                // parentId: currFile.id,
-                name: input || 'testFolder'
-            })
+        const folderName = input || 'testFolder'
+        
+        socket.emit('addFolder', { folderPath: `/user/${folderName}` });
 
-            if (response.status === 200) {
-                console.log('Folder created successfully:', response.data);
-            }
-        } catch (err) {
-            console.log(err);
-        }
         setInput('')
     }
-
-    const createFile = async () => {
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/explorer/createfile`, {
-                fileName: input || 'test.txt',
-                fileContent: '',
-                userId
-            })
-
-            if (response.status === 200) {
-                console.log('File created successfully:', response.data);
-            }
-        } catch (err) {
-            console.log(err);
-        }
-        setInput('')
-    }
-
 
     return (
         <div className={`flex flex-col gap-1 w-60 h-fill ${colors.primary1} p-1 px-2 select-none`}>
@@ -90,8 +71,8 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
                 {/* create file  */}
                 <button onClick={createFile} className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+file</button>
                 {/* save  */}
-                <button onClick={() => saveProj()} className="flex-auto hover:scale-105 flex justify-center items-center">
-                    <SaveIcon color={`#000`} />
+                <button onClick={() => saveProj()} className="text-white flex-auto hover:scale-105 flex justify-center items-center">
+                    <SaveIcon  />
                 </button>
             </div>
 
@@ -101,8 +82,8 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
 
             {/* file tree  */}
             <div className="p-1">
-                {sessionFileTree && sessionFileTree.children && sessionFileTree.children.length > 0 &&
-                    sessionFileTree.children?.map((child: types.FileTreeNode) =>
+                {sessionFileTree && sessionFileTree.length > 0 &&
+                    sessionFileTree.map((child: types.FileTreeNode) =>
                         <TreeNode node={child}
                             key={child.id}
                             loadDocument={loadDocument}
@@ -126,6 +107,9 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
 
     const openFile = (node: types.FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
+        console.log("sending node to read file : ", node)/////////////////
+        // setYtext(ydoc.getText(docMap.get(node.id))); // Update the state to use this Y.Text
+
         socket.emit('filecachecheck', node, async (response: any) => {
             if (!response.fileWasInCache) {
                 Y.applyUpdate(ydoc, new Uint8Array(response.newDoc));
@@ -140,7 +124,15 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
         // socket.emit('filechange', id);
     }
 
+    // const deleteFile = async () => {
+    //     const folderName = input || 'testFolder'
+        
+    //     socket.emit('addFolder', { filePath: `/user/${folderName}` });
 
+    //     setInput('')
+    // }
+
+    
     if (node.children === null) {
         return (
             <div key={node.id} id={node.id}
@@ -158,7 +150,7 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
                 </div>
                 {
                     isExpanded &&
-                    <div className="pl-2 ml-2 border-l-2 border-transparent hover:border-black/70">
+                    <div className="pl-2 ml-2 border-l-2 border-transparent border-white/10 hover:border-white/50">
                         {
                             node.children.map((child: any) =>
                                 <TreeNode node={child}

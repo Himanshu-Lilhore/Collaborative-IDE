@@ -33,6 +33,7 @@ export default function Session() {
                 });
 
                 if (res.status === 200 && res.data) {
+                    console.log(res.data)///////////////////
                     if ((!res.data.isPrivate) ||
                         user.sessions.includes(UrlSessionId) ||
                         user._id === session.admin) {

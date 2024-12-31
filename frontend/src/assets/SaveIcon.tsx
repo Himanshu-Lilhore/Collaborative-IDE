@@ -3,7 +3,7 @@ const SaveIcon = ({ color = '#000000', ...props }: { color?: string }) => (
         viewBox="0 -0.5 21 21"
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
-        fill={color}
+        fill="currentColor"
         {...props}
         className="size-5"
     >
@@ -15,7 +15,6 @@ const SaveIcon = ({ color = '#000000', ...props }: { color?: string }) => (
         />
         <g id="SVGRepo_iconCarrier">
             <title>{"Save Project"}</title>
-            <desc>{"Created with Sketch."}</desc>
             <defs />
             <g
                 id="Page-1"
@@ -27,7 +26,7 @@ const SaveIcon = ({ color = '#000000', ...props }: { color?: string }) => (
                 <g
                     id="Dribbble-Light-Preview"
                     transform="translate(-419.000000, -640.000000)"
-                    fill={color}
+                    fill="currentColor"
                 >
                     <g id="icons" transform="translate(56.000000, 160.000000)">
                         <path

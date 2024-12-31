@@ -3,68 +3,145 @@ const File = require('../models/fileModel');
 const mongoose = require('mongoose');
 const Readable = require('stream').Readable;
 const fs = require('fs');
+const globalState = require('../utils/state');
+const { simplifyPath } = require('../utils/utilFunctions');
 const path = require('path');
-const {
-    createFileLocally,
-    createFolderLocally,
-    readFileLocally,
-    deleteFileLocally,
-    deleteFolderLocally,
-    updateFileLocally,
-    renameFolderLocally
-} = require('../services/fileService');
-const { create } = require('../models/userModel');
+const baseDir = path.join(__dirname, '../user');
 
 
-// create file
-const createFile = async (req, res) => {
+const ensureDirectoryExists = (dirPath) => {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+};
+const createFileLocally = (fileName, content) => {
     try {
-        const { fileName, fileContent, userId } = req.body;
-        const fileSizeInMB = Buffer.byteLength(fileContent, 'utf-8') / (1024 * 1024);
-        let file;
-
-        // creating file in user dir
-        createFileLocally(fileName, fileContent);
-
-        // creating file in db
-        if (fileSizeInMB <= 10) {
-            file = await File.create({
-                name: fileName,
-                data: fileContent,
-                lastUpdatedBy: userId
-            });
-            console.log('File saved directly in MongoDB.');
-        } else {
-            file = await File.create({
-                name: fileName,
-                lastUpdatedBy: userId
-            });
-
-            const bucket = new GridFSBucket(mongoose.connection.getClient().db());
-            const uploadStream = bucket.openUploadStreamWithId(file._id, fileName);
-
-            await new Promise((resolve, reject) => {
-                const stream = Readable.from([fileContent]);
-                stream.pipe(uploadStream)
-                    .on('error', reject)
-                    .on('finish', resolve);
-            });
-
-            file.data = `gridfs.${file._id}`;   // "gridfs.<gridfs_obj_id>"
-            await file.save();
-            console.log('Large file saved in GridFS and reference updated.');
-        }
-        res.status(200).json(file);
+        ensureDirectoryExists(baseDir);
+        const filePath = path.join(baseDir, fileName);
+        fs.writeFileSync(filePath, content, 'utf-8');
+        console.log(`File created at: ${filePath}`);
+        return filePath;
     } catch (error) {
-        res.status(500).send(error.message);
+        console.error(`Error creating file: ${error.message}`);
+        throw error;
+    }
+};
+const createFolderLocally = (folderName) => {
+    try {
+        const folderPath = path.join(baseDir, folderName);
+        ensureDirectoryExists(folderPath);
+        console.log(`Folder created at: ${folderPath}`);
+        return folderPath;
+    } catch (error) {
+        console.error(`Error creating folder: ${error.message}`);
+        throw error;
     }
 };
 
+
+// create file
+const createFile = async (filePath, userId) => {
+    const fileName = filePath.split('/').pop();
+
+    const file = await File.create({
+        name: fileName,
+        data: '//blank',
+        lastUpdatedBy: userId,
+    });
+
+    globalState.filePathToIdMap.set(simplifyPath(filePath), file._id)
+
+    createFileLocally(fileName, '');
+};
+
+// create folder
+const createFolder = async (folderPath) => {
+    const folderName = folderPath.split('/').pop();
+
+    createFolderLocally(folderName);
+};
+
+
+// const createFile = async (req, res) => {
+//     try {
+//         const { fileName, fileContent, userId } = req.body;
+//         const fileSizeInMB = Buffer.byteLength(fileContent, 'utf-8') / (1024 * 1024);
+//         let file;
+
+//         // creating file in user dir
+//         createFileLocally(fileName, fileContent);
+
+//         // creating file in db
+//         if (fileSizeInMB <= 10) {
+//             file = await File.create({
+//                 name: fileName,
+//                 data: fileContent,
+//                 lastUpdatedBy: userId
+//             });
+//             console.log('File saved directly in MongoDB.');
+//         } else {
+//             file = await File.create({
+//                 name: fileName,
+//                 lastUpdatedBy: userId
+//             });
+
+//             const bucket = new GridFSBucket(mongoose.connection.getClient().db());
+//             const uploadStream = bucket.openUploadStreamWithId(file._id, fileName);
+
+//             await new Promise((resolve, reject) => {
+//                 const stream = Readable.from([fileContent]);
+//                 stream.pipe(uploadStream)
+//                     .on('error', reject)
+//                     .on('finish', resolve);
+//             });
+
+//             file.data = `gridfs.${file._id}`;   // "gridfs.<gridfs_obj_id>"
+//             await file.save();
+//             console.log('Large file saved in GridFS and reference updated.');
+//         }
+//         res.status(200).json(file);
+//     } catch (error) {
+//         res.status(500).send(error.message);
+//     }
+// };
+
+function isUUIDv4(uuid) {
+    const uuidv4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidv4Regex.test(uuid);
+}
+const findAndUpdateNodeById = (tree, targetId, newId) => {
+    if (!Array.isArray(tree)) return null;
+
+    for (const node of tree) {
+        if (node.id === targetId) {
+            console.log(`Node found with ID: ${targetId}`);
+            node.id = newId;
+            return node;
+        }
+
+        if (Array.isArray(node.children)) {
+            const updatedNode = findAndUpdateNodeById(node.children, targetId, newId);
+            if (updatedNode) return updatedNode;
+        }
+    }
+    return null; 
+};
+
+
 // read file
-const readFile = async (req, res) => {
+const readFile = async (node) => {
     try {
-        let file = await File.findById(req.body._id);
-        if (!file) throw new Error('File not found');
+        let file = await File.findById(node.id);
+        if (!file || isUUIDv4(node.id)) {
+            console.log("has uuid as id, creating new")
+            file = await File.create({
+                name: node.name,
+                data: '//blank',
+                lastUpdatedBy: null,
+            });
+            findAndUpdateNodeById(globalState.sessionFileTree, node.id, file._id)
+            return file
+        }
 
         if (file.data) {
             if (file.data.startsWith('gridfs.')) {
@@ -84,9 +161,10 @@ const readFile = async (req, res) => {
                 file.data = Buffer.concat(chunks).toString('utf-8');
             }
         }
-        res.status(200).json(file);
+
+        return file;
     } catch (error) {
-        res.status(500).send(error.message);
+        console.log(error.message)
     }
 };
 
@@ -156,18 +234,9 @@ const deleteFile = async (req, res) => {
 };
 
 
-const createFolder = async (req, res) => {
-    try {
-        
-        res.status(200).json();
-    } catch (error) {
-        res.status(500).send(error.message);
-    }
-};
-
 const renameFolder = async (req, res) => {
     try {
-        
+
         res.status(200).json();
     } catch (error) {
         res.status(500).send(error.message);
@@ -176,7 +245,7 @@ const renameFolder = async (req, res) => {
 
 const deleteFolder = async (req, res) => {
     try {
-        
+
         res.status(200).json();
     } catch (error) {
         res.status(500).send(error.message);

@@ -1,5 +1,13 @@
+// socket.js
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_BACKEND_URL);
+let socket:any;
 
-export default socket;
+const getSocket = () => {
+    if (!socket) {
+        socket = io(import.meta.env.VITE_BACKEND_URL);
+    }
+    return socket;
+};
+
+export default getSocket;

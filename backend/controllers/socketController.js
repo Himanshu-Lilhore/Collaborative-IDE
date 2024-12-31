@@ -4,11 +4,13 @@ const { encodeStateAsUpdate, applyUpdate } = require('yjs');
 const { ptyProcess } = require('../server/terminal');
 const globalState = require('../utils/state');
 const { readFileLocally } = require('../services/fileService')
+const { createFile, createFolder } = require('./explorerController')
+const Session = require('../models/sessionModel');
 
 const setupSocket = (io) => {
-    const ydoc = new Y.Doc();
-    let docMap = ydoc.getMap('documents')
-    // loadYjsState(ydoc);
+    globalState.ydoc = new Y.Doc();
+    let docMap = globalState.ydoc.getMap('documents')
+    // loadYjsState(globalState.ydoc);
 
     ptyProcess.onData((data) => {
         io.emit('terminal', data)
@@ -16,35 +18,36 @@ const setupSocket = (io) => {
 
     io.on('connection', async (socket) => {
         console.log(`Socket connected: ${socket.id}`);
-
         socket.emit('filetree', globalState.sessionFileTree);
+        
+        socket.on('initialState', () => {
+            const update = encodeStateAsUpdate(globalState.ydoc);
+            socket.emit('initialState', { id: socket.id, initialState: update })
+        });
 
-        const update = encodeStateAsUpdate(ydoc);
-        socket.emit('initialState', socket.id, update);
 
         socket.on('update', (clientUpdate) => {
             try {
                 const updateArray = new Uint8Array(clientUpdate);
-                applyUpdate(ydoc, updateArray);
-                // socket.broadcast.emit('update', clientUpdate);
+                applyUpdate(globalState.ydoc, updateArray);
+                socket.broadcast.emit('update', clientUpdate);
             } catch (err) {
                 console.error('Error applying update:', err);
             }
         });
 
+
         socket.on('filecachecheck', async (node, callback) => {
             // let file = globalState.yjsCache.get(fileId);
             let file = docMap.get(node.id);
             if (!file) {
-                // file = await getFile(fileId); // Loading file from DB
                 data = await readFileLocally(node)
-                // console.log(`Loading file ${node.id} from local to YJS : ${data}`);
-                let docMap = ydoc.getMap('documents')
+                let docMap = globalState.ydoc.getMap('documents')
                 let ytext = new Y.Text();
                 ytext.insert(0, data)
                 docMap.set(node.id, ytext);
                 // await globalState.yjsCache.put(fileId);
-                callback({ newDoc: Y.encodeStateAsUpdate(ydoc), fileWasInCache: false })
+                callback({ newDoc: Y.encodeStateAsUpdate(globalState.ydoc), fileWasInCache: false })
             } else {
                 console.log('file was already in cache')
                 callback({ fileWasInCache: true })
@@ -52,10 +55,35 @@ const setupSocket = (io) => {
         });
 
 
+        // filetree events
         socket.on('filetree', (data) => {
             socket.emit('filetree', globalState.sessionFileTree);
         });
+        socket.on('addFile', async (data) => {
+            const { filePath, userId } = data;
+            try {
+                await createFile(filePath, userId);
+            } catch (error) {
+                console.error(`Error adding file: ${error.message}`);
+                socket.emit('error', { message: 'Failed to add file.' });
+            }
+        });
+        socket.on('removeFile', (data) => {
+            const { filePath } = data;
+            handleRemove(filePath, '/user');
+        });
+        socket.on('addFolder', async (data) => {
+            const { folderPath } = data;
+            try {
+                await createFolder(folderPath);
+            } catch (error) {
+                console.error(`Error adding file: ${error.message}`);
+                socket.emit('error', { message: 'Failed to add file.' });
+            }
+        });
 
+
+        // terminal events
         socket.on('terminalinit', (data) => {
             ptyProcess.write('cls\r');
         });
@@ -63,8 +91,10 @@ const setupSocket = (io) => {
             ptyProcess.write(data);
         });
 
-        socket.on('disconnect', () => {
+
+        socket.on('disconnect', async () => {
             console.log('Socket disconnected:', socket.id);
+            if(globalState.sessionId) await Session.findByIdAndUpdate(globalState.sessionId, { sessionFileTree: globalState.sessionFileTree })
         });
     });
 };
