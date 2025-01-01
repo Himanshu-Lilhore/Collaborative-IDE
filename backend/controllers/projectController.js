@@ -1,16 +1,18 @@
 const Project = require('../models/projectModel');
+const Session = require('../models/sessionModel');
+const User = require('../models/userModel');
 const Y = require('yjs');
 const globalState = require('../utils/state');
-const { updateFile } = require('../services/fileService');
-const User = require('../models/userModel');
+const { readFileLocally } = require('../services/fileService');
 const { defaultFileTree } = require('../utils/constants')
+const { updateFile } = require('../controllers/explorerController');
 
 
 exports.createProject = async (req, res) => {
     try {
         const { name, description, isPrivate } = req.body;
         const savedProject = await Project.create({ name, description, isPrivate, fileTree: defaultFileTree })
-        await User.findByIdAndUpdate(req.user._id, {projects: [...req.user.projects, savedProject._id]})
+        await User.findByIdAndUpdate(req.user._id, { projects: [...req.user.projects, savedProject._id] })
         res.status(200).json(savedProject);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -65,32 +67,43 @@ exports.deleteProject = async (req, res) => {
 };
 
 
-exports.saveProject = async (req, res) => {
-    try {
-        const ydoc = new Y.Doc();
-        const docMap = ydoc.getMap('documents');
-        console.log("docMap : ", docMap)////////////////////////////
-        const unsavedDocsMap = ydoc.getMap('unsavedDocs');
-
-        let unsavedFiles = Array.from(unsavedDocsMap.keys())
-        console.log("unsavedFiles : ", unsavedFiles)//////////////////////
-        unsavedFiles = unsavedFiles.filter(id => globalState.yjsCache.cache.keys().includes(id));
-        console.log("unsavedFiles : ", unsavedFiles)//////////////////////
-        if (unsavedFiles.length === 0) {
-            console.log("No unsaved files to save.");
-            res.status(200).send({ message: "No unsaved files to save." });
-            return
-        }
-
-        for (const fileId of unsavedFiles) {
-            const ytext = docMap.get(fileId);
-            if (ytext) {
-                const fileContent = ytext.toString();
-                await updateFile(fileId, null, fileContent, null);
+saveFilesRecursively = async (tree) => {
+    for (const node of tree) {
+        if (node.children) {
+            await saveFilesRecursively(node.children);
+        } else {
+            let updateSuccess = false;
+            if (node.children === null && !node.isSaved) {
+                const data = await readFileLocally(node);
+                if(data) updateSuccess = await updateFile({ fileId: node.id, content: data, fileName: node.name });
+                else console.log(`Failed to read file ${node.name} (from local).`);
+                if (updateSuccess) {
+                    node.isSaved = true;
+                    console.log(`File ${node.name} updated successfully (to DB).`);
+                } else {
+                    console.error(`Failed to update file ${node.name} (to DB).`);
+                }
             } else {
-                console.warn(`File with ID ${fileId} not found in Y.Map.`);
+                console.log(`File ${node.name} is already saved.`);
+                // return true;
             }
         }
+    }
+}
+
+
+exports.saveProject = async (req, res) => {
+    try {
+        // const ydoc = new Y.Doc();
+        // const docMap = ydoc.getMap('documents');
+        // console.log("docMap : ", docMap)////////////////////////////
+        // const unsavedDocsMap = ydoc.getMap('unsavedDocs');
+
+        // let unsavedFiles = Array.from(unsavedDocsMap.keys())
+        await saveFilesRecursively(globalState.sessionFileTree);
+
+        await Session.findByIdAndUpdate(globalState.sessionId, { sessionFileTree: globalState.sessionFileTree })
+        globalState.io.emit('filetree', globalState.sessionFileTree);
 
         res.status(200).send({ message: "Files saved successfully" });
     } catch (error) {

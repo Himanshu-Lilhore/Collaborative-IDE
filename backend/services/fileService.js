@@ -8,6 +8,7 @@ const { readFile } = require('../controllers/explorerController');
 const Session = require('../models/sessionModel');
 const chokidar = require('chokidar');
 const { ptyProcess } = require('../server/terminal');
+const { initializeChokidar } = require('./sessionTree');
 
 const buildTree = async (currentDir, currentTree) => {
     const items = await fsp.readdir(currentDir);
@@ -26,31 +27,6 @@ const buildTree = async (currentDir, currentTree) => {
         }
         name = item
         id = uuidv4();
-
-        // if (isDirectory) {
-        //     name = item
-        //     id = uuidv4();
-        // } else {
-        //     name = item; //item.includes(constants.idSeparator) ? item : `${item}${constants.idSeparator}${uuidv4()}${constants.idSeparator}`;
-        //     id = uuidv4();
-        // }
-        // // Rename the item locally if necessary
-        // if (item !== name) {
-        //     // const newPath = path.join(currentDir, name);
-        //     // await fsp.rename(itemPath, newPath); // renaming
-        //     if (isDirectory) {
-        //         // const oldFolderPath = path.join(currentDir, item);
-        //         // const newFolderPath = path.join(currentDir, name);
-        //         // fs.renameSync(oldFolderPath, newFolderPath);
-        //         // itemPath = path.join(currentDir, name)
-        //     } else {
-        //         const oldPath = path.join(currentDir, item);
-        //         const newPath = path.join(currentDir, name);
-        //         fs.renameSync(oldPath, newPath);
-        //     }
-        // }
-        // itemPath = path.join(currentDir, name)
-        // const stat = await fsp.stat(itemPath);
 
         const tempObj = { name, id };
 
@@ -73,18 +49,23 @@ const generateFileTree = async () => {
 
 
 function getPathById(tree, targetId, path) {
-    if (!tree || tree.length === 0) return null;
+    if (!tree) return null;
 
     if (tree && tree.length > 0) {
         for (let child of tree) {
-            if (child.id.toString() === targetId) {
-                return `${path}/${child.name}`
+            // console.log("targetId: ", targetId, "path: ", path)////////////////////////
+            if (child.children === null) {
+                if(child.id.toString() === targetId) {
+                    // console.log('match found')////////////////////////
+                    return `${path}/${child.name}`
+                }
             } else {
-                const result = getPathById(child.children, targetId, `${path}/${tree.name}`);
+                const result = getPathById(child.children, targetId, `${path}/${child.name}`);
                 if (result) {
                     return result;
                 }
             }
+
         }
     }
     return null;
@@ -104,15 +85,12 @@ const fetchFilesLocally = async (tree, basePath) => {
             const filePath = path.join(basePath, node.name);
 
             if (node.children && node.children.length > 0) {
-                // If it has children, it's a directory, so we create it locally
                 if (!fs.existsSync(filePath)) {
                     const fullPath = path.join(baseDir.split(path.sep).slice(0, -1).join(path.sep), filePath)
                     fs.mkdirSync(fullPath, { recursive: true });
                 }
-                // Recursively fetch files for subdirectories
                 await fetchFilesLocally(node.children, filePath);
             } else {
-                // If it's a file, fetch it from DB and save it locally
                 const file = await readFile(node);
                 saveFileLocally(file, filePath);
             }
@@ -123,51 +101,24 @@ const fetchFilesLocally = async (tree, basePath) => {
 };
 
 
-// const clearAndRecreateDirectory = () => {
-//     const baseDir = 'C:\\Users\\user\\deletiontesttttt\\real'///////////
-//     // const watchPath = baseDir/////////////
-//     // chokidar.watch(watchPath, { ignoreInitial: true })
-//     //     .on('add', filePath => {
-//     //         console.log(filePath)///////////////
-//     //     })
-//     chokidar.unwatch(baseDir);
-
-
-//     console.log('Clearing and recreating directory:', baseDir);
-
-//     try {
-//         if (fs.existsSync(baseDir)) {
-//             // Remove the directory and its contents
-//             fs.rmSync(baseDir, { recursive: true, force: true });
-//         }
-//         // Recreate the directory
-//         fs.mkdirSync(baseDir, { recursive: true });
-//     } catch (error) {
-//         console.error('Error clearing and recreating directory:', error.message);
-//         throw error; // Rethrow to handle it in fetchFilesLocally
-//     }
-// };
 
 const clearAndRecreateDirectory = async () => {
     const baseDir = 'C:\\aaUserFiles\\edu\\Projects\\Collaborative-IDE\\backend\\user'///////////
     console.log('Clearing and recreating directory:', baseDir);
+    if (globalState.watcher) await globalState.watcher.close()
     ptyProcess.write('cd ..\r');
 
     try {
-        // Stop watchers or processes accessing baseDir if necessary
-        if (globalState.watcher) await globalState.watcher.close()
-
         if (fs.existsSync(baseDir)) {
-            // Retry mechanism for deletion
             fs.rmSync(baseDir, { recursive: true, force: true });
         }
-        // Recreate the directory
         fs.mkdirSync(baseDir, { recursive: true });
     } catch (error) {
         console.error('Error clearing and recreating directory:', error.message);
         throw error;
     }
 
+    initializeChokidar('./user');
     ptyProcess.write(`cd ${baseDir}\r`);
 };
 
@@ -183,14 +134,6 @@ const saveFileLocally = (file, filePath) => {
         console.error('Error saving file locally:', error.message);
     }
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -222,15 +165,16 @@ const createFolderLocally = (folderName) => {
 };
 
 const readFileLocally = async (node) => {
+    // console.log('reading file locally')////////////////////////
     try {
-        const temp = getPathById(globalState.sessionFileTree, node.id, '');
+        const temp = getPathById(globalState.sessionFileTree, node.id.toString(), '');
         if (temp === null) {
-            console.log('File not found in local tree (readFileLocally)')
-            return 'File not found (readFileLocally)';
+            // console.log('File not found in local tree (readFileLocally) | temp : ', temp)/////////
+            return undefined;
         }
         const filePath = path.join(baseDir, temp);
         const content = fs.readFileSync(filePath, 'utf-8');
-        console.log(`File read from: ${filePath}`);
+        // console.log(`File read from: ${filePath}`);/////////////////////
         return content;
     } catch (error) {
         console.error(`Error reading file: ${error.message}`);
@@ -269,9 +213,9 @@ const deleteFolderLocally = (folderName) => {
     }
 };
 
-const updateFileLocally = (fileName, newContent) => {
+const updateFileLocally = (filePath, newContent) => {
     try {
-        const filePath = path.join(baseDir, fileName);
+        // const filePath = path.join(baseDir, fileName);
         if (fs.existsSync(filePath)) {
             fs.writeFileSync(filePath, newContent, 'utf-8');
             console.log(`File updated at: ${filePath}`);

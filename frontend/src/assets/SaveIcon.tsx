@@ -5,7 +5,7 @@ const SaveIcon = ({ color = '#000000', ...props }: { color?: string }) => (
         xmlnsXlink="http://www.w3.org/1999/xlink"
         fill="currentColor"
         {...props}
-        className="size-5"
+        className="size-5 hover:scale-105 hover:opacity-75 transition-transform transform duration-200"
     >
         <g id="SVGRepo_bgCarrier" strokeWidth={0} />
         <g

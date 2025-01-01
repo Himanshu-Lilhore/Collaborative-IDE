@@ -169,15 +169,15 @@ const readFile = async (node) => {
 };
 
 // update file
-const updateFile = async (req, res) => {
-    const { fileId, fileName, fileContent, userId } = req.body;
+const updateFile = async (newInfo) => {
+    const { fileId, fileName, content, userId } = newInfo;
     try {
         const file = await File.findById(fileId);
         if (!file) throw new Error('File not found');
 
-        const fileSizeInMB = Buffer.byteLength(newFileContent, 'utf-8') / (1024 * 1024);
+        const fileSizeInMB = Buffer.byteLength(content, 'utf-8') / (1024 * 1024);
 
-        file.name = newFileName || file.name;
+        file.name = fileName || file.name;
         file.lastUpdatedBy = userId || file.lastUpdatedBy;
 
         if (fileSizeInMB <= 10) {
@@ -188,7 +188,7 @@ const updateFile = async (req, res) => {
                 await bucket.delete(new mongoose.Types.ObjectId(gridFsId));
                 console.log('File deleted from GridFS.');
             }
-            file.data = newFileContent;
+            file.data = content;
             await file.save();
             console.log('File updated directly in MongoDB.');
         } else {
@@ -196,7 +196,7 @@ const updateFile = async (req, res) => {
             const uploadStream = bucket.openUploadStreamWithId(file._id, file.name);
 
             await new Promise((resolve, reject) => {
-                const stream = Readable.from([newFileContent]);
+                const stream = Readable.from([content]);
                 stream.pipe(uploadStream)
                     .on('error', reject)
                     .on('finish', resolve);
@@ -206,9 +206,13 @@ const updateFile = async (req, res) => {
             await file.save();
             console.log('Large file updated in GridFS and reference updated.');
         }
-        res.status(200).json(file);
+        console.log('File updated successfully.');
+        // res.status(200).json(file);
+        return true;
     } catch (error) {
-        res.status(500).send(error.message);
+        console.log(error.message)
+        // res.status(500).send(error.message);
+        return false;
     }
 };
 

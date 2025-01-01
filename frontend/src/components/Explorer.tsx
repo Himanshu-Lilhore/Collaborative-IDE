@@ -2,8 +2,6 @@
 import getSocket from '@/util/socket';
 const socket = getSocket();
 import { useEffect, useState } from "react";
-import SaveIcon from "../assets/SaveIcon.tsx"
-import axios from 'axios';
 import colors from '../util/colors'
 import * as types from '../types/index.ts'
 import { useDispatch, useSelector } from "react-redux";
@@ -30,21 +28,6 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
     //     console.log("filetree : ", sessionFileTree)
     // }, [currFile, sessionFileTree])
 
-    const saveProj = async () => {
-        console.log('sending save project request ...')
-
-        try {
-            axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
-                .then(response => {
-                    console.log('Data saved successfully:', response.data);
-                })
-                .catch(error => {
-                    console.error('Error saving data:', error);
-                });
-        } catch (err: any) {
-            console.log(err.message);
-        }
-    }
 
     const createFile = async () => {
         const fileName = input || 'test.txt'
@@ -70,10 +53,6 @@ export default function Explorer({ loadDocument, ydoc, provider, editorRef }: { 
                 <button onClick={createFolder} className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+folder</button>
                 {/* create file  */}
                 <button onClick={createFile} className="flex-auto border border-black bg-blue-900/50 px-2 hover:bg-blue-700/50">+file</button>
-                {/* save  */}
-                <button onClick={() => saveProj()} className="text-white flex-auto hover:scale-105 flex justify-center items-center">
-                    <SaveIcon  />
-                </button>
             </div>
 
             <div>

@@ -176,25 +176,29 @@ export default function Playground() {
         socket.on('initialState', initialStateHandler);
         socket.emit('initialState');
 
-        // ytext.observe((_event: any) => {
-        //     if (!unsavedDocsMap.has(currFile.id)) {
-        //         unsavedDocsMap.set(currFile.id, new Date().getTime().toString())
-        //         console.log(`${currFile.name} added to unsaved docs`);
-        //     }
-
-        //     // You can inspect the changes in the event
-        //     // event.delta.forEach((change:any) => {
-        //     //     if (change.insert) {
-        //     //         console.log('Inserted text:', change.insert);
-        //     //     }
-        //     //     if (change.delete) {
-        //     //         console.log('Deleted characters:', change.delete);
-        //     //     }
-        //     //     if (change.retain) {
-        //     //         console.log('Retained characters:', change.retain);
-        //     //     }
-        //     // });
-        // });
+        ytext.observe((_event: any) => {
+            // if (!unsavedDocsMap.has(currFile.id)) {
+            //     unsavedDocsMap.set(currFile.id, new Date().getTime().toString())
+            //     console.log(`${currFile.name} added to unsaved docs`);
+            // }
+            try {
+                socket.emit('update:ytext', currFile.id, ytext.toString());
+            } catch(err:any) {
+                console.log(err.message);
+            }
+            // You can inspect the changes in the event
+            // event.delta.forEach((change:any) => {
+            //     if (change.insert) {
+            //         console.log('Inserted text:', change.insert);
+            //     }
+            //     if (change.delete) {
+            //         console.log('Deleted characters:', change.delete);
+            //     }
+            //     if (change.retain) {
+            //         console.log('Retained characters:', change.retain);
+            //     }
+            // });
+        });
 
         return () => {
             socket.off('initialState', initialStateHandler);

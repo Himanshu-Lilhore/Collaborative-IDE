@@ -10,6 +10,8 @@ import UserIcon from '@/assets/UserIcon'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import * as types from '../types/index'
+import SaveIcon from '@/assets/SaveIcon'
+import Axios from 'axios'
 
 
 const users = [
@@ -23,6 +25,21 @@ export default function InfoPanel() {
     const session:types.SessionState = useSelector((state:any) => state.sessionStore)
     const user:types.User = useSelector((state:any) => state.userStore)
 
+    const saveProj = async () => {
+        console.log('sending save project request ...')
+
+        try {
+            Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
+                .then(response => {
+                    console.log('Data saved successfully:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error saving data:', error);
+                });
+        } catch (err: any) {
+            console.log(err.message);
+        }
+    }
     
     return (
         <div className={`flex flex-row p-2 justify-between items-center w-full ${colors.primary1}`}>
@@ -33,7 +50,10 @@ export default function InfoPanel() {
                 {/* proj name  */}
                 <div className='text-xl open-sans-medium'>{session.project?.name}</div>
 
-                {/* <div>Saving...</div> */}
+                {/* save  */}
+                <button onClick={() => saveProj()} className="text-white ml-3">
+                    <SaveIcon  />
+                </button>
             </div>
 
             <div className='flex flex-row gap-5 justify-between items-center px-2'>

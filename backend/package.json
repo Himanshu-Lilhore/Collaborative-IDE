@@ -5,7 +5,10 @@
   "scripts": {
     "start": "node src/index.ts",
     "build": "tsc",
-    "dev": "nodemon src/index.ts --ignore user/"
+    "dev": "nodemon src/index.ts"
+  },
+  "nodemonConfig": {
+      "ignore": ["user/*"]
   },
   "keywords": [],
   "author": "",

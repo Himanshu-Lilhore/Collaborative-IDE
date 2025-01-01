@@ -72,6 +72,7 @@ exports.getSession = async (req, res) => {
             const sessionToken = tokenizeSession(session._id)
             res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: sessionTokenValidity, sameSite: 'None', secure: true })
             console.log('Session fetched : ', session._id)
+            globalState.sessionId = session._id
             res.status(200).json(excludeSensitive(session));
         }
     } catch (error) {

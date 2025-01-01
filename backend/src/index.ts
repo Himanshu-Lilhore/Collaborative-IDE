@@ -17,6 +17,7 @@ const {deleteAllFiles} = require('../utils/utilFunctions')
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, socketCorsOptions);
+globalState.io = io;
 
 // Connect to DB
 connectDB();
@@ -41,7 +42,7 @@ setupSocket(io);
 })();
 
 // file tree
-initializeChokidar('./user', io);
+initializeChokidar('./user');
 
 // (async () => {
 //     await deleteAllFiles()
