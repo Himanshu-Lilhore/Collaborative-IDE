@@ -40,6 +40,7 @@ const setupSocket = (io) => {
         socket.on('update:ytext', (id, newContent) => {
             try {
                 const result = findNodeById(globalState.sessionFileTree, id)
+                console.log('result : ', result)////////////////////////
                 updateFileLocally(result.path, newContent);
                 result.node.isSaved = false;
                 // console.log('updated filetree : ', globalState.sessionFileTree)////////////

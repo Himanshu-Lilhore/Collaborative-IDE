@@ -8,7 +8,6 @@ const { readFile } = require('../controllers/explorerController');
 const Session = require('../models/sessionModel');
 const chokidar = require('chokidar');
 const { ptyProcess } = require('../server/terminal');
-const { initializeChokidar } = require('./sessionTree');
 
 const buildTree = async (currentDir, currentTree) => {
     const items = await fsp.readdir(currentDir);
@@ -53,6 +52,7 @@ function getPathById(tree, targetId, path) {
 
     if (tree && tree.length > 0) {
         for (let child of tree) {
+            // console.log("child: ", child)////////////////////////
             // console.log("targetId: ", targetId, "path: ", path)////////////////////////
             if (child.children === null) {
                 if(child.id.toString() === targetId) {
@@ -118,7 +118,6 @@ const clearAndRecreateDirectory = async () => {
         throw error;
     }
 
-    initializeChokidar('./user');
     ptyProcess.write(`cd ${baseDir}\r`);
 };
 

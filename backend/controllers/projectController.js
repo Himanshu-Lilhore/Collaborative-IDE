@@ -45,7 +45,7 @@ exports.updateProject = async (req, res) => {
         console.log(updates._id.toString());
         const updatedProject = await Project.findByIdAndUpdate(
             req.body._id,
-            { ...updates, lastUpdatedBy: req.body.lastUpdatedBy },
+            { ...updates, lastUpdatedBy: req.body.lastUpdatedBy||req.user._id },
             { new: true }
         );
         if (!updatedProject) return res.status(404).json({ message: 'Project not found' });

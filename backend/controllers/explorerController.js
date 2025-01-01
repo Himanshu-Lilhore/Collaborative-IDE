@@ -43,15 +43,19 @@ const createFolderLocally = (folderName) => {
 const createFile = async (filePath, userId) => {
     const fileName = filePath.split('/').pop();
 
-    const file = await File.create({
-        name: fileName,
-        data: '//blank',
-        lastUpdatedBy: userId,
-    });
-
-    globalState.filePathToIdMap.set(simplifyPath(filePath), file._id)
-
-    createFileLocally(fileName, '');
+    let file;
+    if (!fs.existsSync(filePath)) {
+        file = await File.create({
+            name: fileName,
+            data: '//blank',
+            lastUpdatedBy: userId,
+        });
+        globalState.filePathToIdMap.set(simplifyPath(filePath), file._id)
+    
+        createFileLocally(fileName, '');
+    } else {
+        console.log('File already exists');
+    }
 };
 
 // create folder
@@ -190,7 +194,7 @@ const updateFile = async (newInfo) => {
             }
             file.data = content;
             await file.save();
-            console.log('File updated directly in MongoDB.');
+            console.log('fileSizeInMB <= 10');
         } else {
             const bucket = new GridFSBucket(mongoose.connection.getClient().db());
             const uploadStream = bucket.openUploadStreamWithId(file._id, file.name);
@@ -206,7 +210,7 @@ const updateFile = async (newInfo) => {
             await file.save();
             console.log('Large file updated in GridFS and reference updated.');
         }
-        console.log('File updated successfully.');
+        console.log('* File updated successfully.');
         // res.status(200).json(file);
         return true;
     } catch (error) {

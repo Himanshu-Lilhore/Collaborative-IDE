@@ -216,7 +216,7 @@ export default function Playground() {
 
                     <div className={`flex flex-col w-full ${colors.primary1}`}>
                         <div className='flex flex-col flex-1 rounded-xl border-2 border-gray-900/70 overflow-hidden bg-white'>
-                            <OpenedFiles currFile={currFile} />
+                            <OpenedFiles currFile={currFile} loadDocument={loadDocument} provider={provider}/>
                             <CodeEditor
                                 handleEditorDidMount={(editor: any, monaco: any) => handleEditorDidMount.current?.(editor, monaco)}
                             />

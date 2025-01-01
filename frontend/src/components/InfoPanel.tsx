@@ -29,15 +29,23 @@ export default function InfoPanel() {
         console.log('sending save project request ...')
 
         try {
-            Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
-                .then(response => {
-                    console.log('Data saved successfully:', response.data);
-                })
-                .catch(error => {
-                    console.error('Error saving data:', error);
-                });
-        } catch (err: any) {
-            console.log(err.message);
+            const res = await Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/save`, {})
+            if(res.status === 200) {
+                console.log('Data saved successfully:', res.data);
+                try {
+                    const res2 = await Axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/project/update`, {
+                        _id: session.project?._id,
+                        fileTree: session.sessionFileTree
+                    })
+                    if(res2.status === 200) {
+                        console.log('Project fileTree updated successfully');
+                    }
+                } catch(err:any) {
+                    console.error('Error saving data:', err);
+                }
+            }
+        } catch (err2: any) {
+            console.log(err2.message);
         }
     }
     

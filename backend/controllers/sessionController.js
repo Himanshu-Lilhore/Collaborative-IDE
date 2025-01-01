@@ -5,6 +5,7 @@ const { tokenizeSession } = require('../utils/tokenizer');
 const { defaultFileTree, sessionTokenValidity } = require('../utils/constants')
 const globalState = require('../utils/state');
 const { fetchFilesLocally, clearAndRecreateDirectory } = require('../services/fileService');
+const { initializeChokidar } = require('../services/sessionTree');
 
 const excludeSensitive = (dataMap) => {
     dataMap = dataMap.toObject()
@@ -68,11 +69,12 @@ exports.getSession = async (req, res) => {
             await fetchFilesLocally(globalState.sessionFileTree, '/user')
             globalState.init = false
             await Session.findByIdAndUpdate(session._id, { sessionFileTree: globalState.sessionFileTree })
-                        
+
             const sessionToken = tokenizeSession(session._id)
             res.cookie('sessiontoken', sessionToken, { httpOnly: true, maxAge: sessionTokenValidity, sameSite: 'None', secure: true })
             console.log('Session fetched : ', session._id)
             globalState.sessionId = session._id
+            initializeChokidar('./user');
             res.status(200).json(excludeSensitive(session));
         }
     } catch (error) {

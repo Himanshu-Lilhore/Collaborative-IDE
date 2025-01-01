@@ -87,7 +87,6 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
     const openFile = (node: types.FileTreeNode) => {
         provider.current.awareness.setLocalState(null)
         console.log("sending node to read file : ", node)/////////////////
-        // setYtext(ydoc.getText(docMap.get(node.id))); // Update the state to use this Y.Text
 
         socket.emit('filecachecheck', node, async (response: any) => {
             if (!response.fileWasInCache) {
@@ -99,8 +98,6 @@ function TreeNode({ node, loadDocument, ydoc, provider, editorRef }:
             loadDocument(node.id);
             dispatch(setCurrFile(node));
         });
-        // setYtext(ydoc.getText(id));
-        // socket.emit('filechange', id);
     }
 
     // const deleteFile = async () => {

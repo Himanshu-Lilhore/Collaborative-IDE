@@ -5,6 +5,7 @@ const globalState = require('../utils/state');
 const { simplifyPath } = require('../utils/utilFunctions');
 const Session = require('../models/sessionModel');
 const baseDir = path.join(__dirname, '../user');
+const fs = require('fs');
 
 
 const findNodeByPath = (currentTree, targetPath, basePath) => {
@@ -53,26 +54,28 @@ const findNodeById = (currentTree, id, path = baseDir) => {
 // Adding files/directories
 const addToSessionTree = (filePath, basePath, isDirectory) => {
 
-    let id = ''
-    if (!isDirectory) {
-        const simplePath = simplifyPath(filePath);
-        id = globalState.filePathToIdMap.get(simplePath);
-        globalState.filePathToIdMap.delete(simplePath);
-    }
-    else id = uuidv4();
-
-    // console.log('handling addToSessionTree : \n', filePath, basePath, isDirectory, id)/////////////////////////
     const parentPath = path.dirname(filePath);
     const parentNode = findNodeByPath(globalState.sessionFileTree, parentPath, basePath);
-
-    if (parentNode && parentNode.children) {
-        parentNode.children.push({
-            name: path.basename(filePath),
-            id: id,
-            isSaved: true,
-            children: isDirectory ? [] : null,
-        });
-    }
+    // if(! parentNode.children.find((child) => child.name === filePath.split('/').pop())) {
+        let id = ''
+        if (!isDirectory) {
+            const simplePath = simplifyPath(filePath);
+            id = globalState.filePathToIdMap.get(simplePath);
+            globalState.filePathToIdMap.delete(simplePath);
+        }
+        else id = uuidv4();
+    
+        // console.log('handling addToSessionTree : \n', filePath, basePath, isDirectory, id)/////////////////////////
+    
+        if (parentNode && parentNode.children) {
+            parentNode.children.push({
+                name: path.basename(filePath),
+                id: id,
+                isSaved: true,
+                children: isDirectory ? [] : null,
+            });
+        }
+    // }
 };
 
 // Remove files/directories
